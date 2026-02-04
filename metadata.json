@@ -1,0 +1,5 @@
+{
+  "name": "React Enterprise Architecture",
+  "description": "A starter template for a scalable React application based on the official frontend architecture manual, featuring a clear separation of concerns with modules and a shared directory.",
+  "requestFramePermissions": []
+}
