@@ -1,16 +1,13 @@
-
-import React from 'react';
-import { ILoginPresentationProps } from './types';
-import Button from '../../../shared/components/Button';
-import Input from '../../../shared/components/Input';
-
+import React from "react";
+import { ILoginPresentationProps } from "./types";
+import Button from "../../../shared/components/Button";
+import Input from "../../../shared/components/Input";import { ClipLoader } from 'react-spinners';
 export default function LoginPresentation({
   register,
   handleSubmit,
   onSubmit,
   errors,
   isLoading,
-  apiError,
 }: ILoginPresentationProps) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-800">
@@ -27,7 +24,7 @@ export default function LoginPresentation({
             id="email"
             label="Email Address"
             type="email"
-            register={register('email')}
+            register={register("email")}
             error={errors.email?.message}
             disabled={isLoading}
           />
@@ -35,17 +32,13 @@ export default function LoginPresentation({
             id="password"
             label="Password"
             type="password"
-            register={register('password')}
+            register={register("password")}
             error={errors.password?.message}
             disabled={isLoading}
           />
 
-          {apiError && (
-            <p className="text-sm text-red-500 text-center">{apiError}</p>
-          )}
-
-          <Button type="submit" isLoading={isLoading} fullWidth>
-            Sign In
+          <Button type="submit" disabled={isLoading} fullWidth>
+            {isLoading ? <ClipLoader size={20} color="#ffffff" /> : 'Sign In'}
           </Button>
         </form>
       </div>

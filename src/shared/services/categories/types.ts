@@ -4,6 +4,9 @@ export interface Category {
   description?: string;
   color?: string;
   icon?: string;
+  type: string; // 'Entrada' | 'Saída'
+  status: boolean; // true = active, false = inactive
+  allowsSingleEvent?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -13,6 +16,9 @@ export interface CreateCategoryRequest {
   description?: string;
   color?: string;
   icon?: string;
+  type: string;
+  status: boolean;
+  allowsSingleEvent?: boolean;
 }
 
 export interface UpdateCategoryRequest {
@@ -20,6 +26,9 @@ export interface UpdateCategoryRequest {
   description?: string;
   color?: string;
   icon?: string;
+  type?: string;
+  status?: boolean;
+  allowsSingleEvent?: boolean;
 }
 
 export interface PaginatedCategoriesResponse {

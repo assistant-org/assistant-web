@@ -1,11 +1,14 @@
-import { z } from 'zod';
-import { CategoryType } from './types';
+import { z } from "zod";
+import { CategoryType } from "./types";
 
 export const categoryFormSchema = z.object({
-  name: z.string().min(1, 'O nome da categoria é obrigatório.'),
-  type: z.nativeEnum(CategoryType, { required_error: 'O tipo é obrigatório.' }),
+  name: z.string().min(1, "O nome da categoria é obrigatório."),
+  type: z.nativeEnum(CategoryType).default(CategoryType.ENTRY),
   allowsSingleEvent: z.boolean().optional(),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Formato de cor inválido. Use #RRGGBB').optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, "Formato de cor inválido. Use #RRGGBB")
+    .optional(),
   description: z.string().optional(),
 });
 

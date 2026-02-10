@@ -1,25 +1,40 @@
+import { supabase } from "../config";
+import { LoginFormSchema } from "../../modules/auth/login/schema";
+import { AuthResponse, User } from "@supabase/supabase-js";
 
-import http from './api';
-import { LoginFormSchema } from '../../modules/auth/login/schema';
-
-// This is a mock service as per the manual's example
 class AuthService {
-  async login(reqBody: LoginFormSchema): Promise<{ token: string }> {
-    console.log('Attempting to log in with:', reqBody);
-    // In a real application, you would make an API call:
-    // const response = await http.post('/auth/login', reqBody);
-    // return response.data;
-
-    // Mocking the API call with a delay
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (reqBody.email === 'admin@example.com' && reqBody.password === 'password') {
-          resolve({ token: 'fake-jwt-token-for-demonstration' });
-        } else {
-          reject(new Error('Invalid credentials'));
-        }
-      }, 1000);
+  async login(reqBody: LoginFormSchema): Promise<AuthResponse["data"]> {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: reqBody.email,
+      password: reqBody.password,
     });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async logout(): Promise<void> {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async getUser(): Promise<User | null> {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return user;
+  }
+
+  async getSession() {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    return session;
   }
 }
 

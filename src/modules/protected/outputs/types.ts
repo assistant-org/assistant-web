@@ -1,16 +1,16 @@
-import { UseFormReturn } from 'react-hook-form';
-import { OutputFormSchema } from './schema';
+import { UseFormReturn } from "react-hook-form";
+import { OutputFormSchema } from "./schema";
 
 export enum OutputType {
-  FIXED = 'fixa',
-  VARIABLE = 'variavel',
+  FIXED = "fixa",
+  VARIABLE = "variavel",
 }
 
 export enum PaymentMethod {
-    CASH = 'dinheiro',
-    PIX = 'pix',
-    CARD = 'cartao',
-    BANK_TRANSFER = 'transferencia',
+  CREDIT_CARD = "CREDIT_CARD",
+  PIX = "PIX",
+  DEBIT_CARD = "DEBIT_CARD",
+  MONEY = "MONEY",
 }
 
 export interface IOutput {
@@ -23,34 +23,44 @@ export interface IOutput {
   description?: string;
   isRecurring?: boolean;
   recurrenceDay?: number;
+  event?: string;
 }
 
 export interface IFilters {
-    startDate: string;
-    endDate: string;
-    category: string;
-    type: string;
-    paymentMethod: string;
+  startDate: string;
+  endDate: string;
+  category: string;
+  type: string;
+  paymentMethod: string;
 }
 
 export interface IOutputsPresentationProps {
-    outputs: IOutput[];
-    filters: IFilters;
-    onFilterChange: (field: keyof IFilters, value: string) => void;
-    onClearFilters: () => void;
-    onOpenModal: (output?: IOutput) => void;
-    onDeleteOutput: (id: string) => void;
-    isModalOpen: boolean;
-    onCloseModal: () => void;
-    editingOutput: IOutput | null;
-    formMethods: UseFormReturn<OutputFormSchema>;
-    onSave: (data: OutputFormSchema) => void;
-    isLoading: boolean;
+  outputs: IOutput[];
+  filters: IFilters;
+  onFilterChange: (field: keyof IFilters, value: string) => void;
+  onClearFilters: () => void;
+  onOpenModal: (output?: IOutput) => void;
+  onDeleteOutput: (id: string) => void;
+  isModalOpen: boolean;
+  onCloseModal: () => void;
+  editingOutput: IOutput | null;
+  formMethods: UseFormReturn<OutputFormSchema>;
+  onSave: (data: OutputFormSchema) => void;
+  isLoading: boolean;
+  categories: any[]; // Adicionar tipo correto depois
 }
 
 export interface IOutputFormProps {
-    formMethods: UseFormReturn<OutputFormSchema>;
-    onSave: (data: OutputFormSchema) => void;
-    onCancel: () => void;
-    isLoading: boolean;
+  formMethods: UseFormReturn<OutputFormSchema>;
+  onSave: (data: OutputFormSchema) => void;
+  onCancel: () => void;
+  isLoading: boolean;
+  categories: any[];
+}
+
+export interface IOutputFormProps {
+  formMethods: UseFormReturn<OutputFormSchema>;
+  onSave: (data: OutputFormSchema) => void;
+  onCancel: () => void;
+  isLoading: boolean;
 }

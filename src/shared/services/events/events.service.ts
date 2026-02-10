@@ -1,34 +1,29 @@
 import { supabase } from "../../config";
-import { CreateOutputRequest, UpdateOutputRequest } from "./types";
+import { CreateEventRequest, UpdateEventRequest } from "./types";
 import {
-  OutputResponse,
-  OutputsListResponse,
+  EventResponse,
+  EventsListResponse,
   ApiResponse,
 } from "./models/response/response";
 
-export class OutputsService {
-  private tableName = "outputs";
+export class EventsService {
+  private tableName = "events";
 
   /**
-   * Cria uma nova saída
+   * Cria um novo evento
    */
   async create(
-    output: CreateOutputRequest,
-  ): Promise<ApiResponse<OutputResponse>> {
+    event: CreateEventRequest,
+  ): Promise<ApiResponse<EventResponse>> {
     try {
       const { data, error } = await supabase
         .from(this.tableName)
-        .insert([
-          {
-            "output-day": output.date,
-            category: output.category,
-            recurrence: output.isRecurring,
-            value: output.value,
-            description: output.description,
-            "payment-type": output.paymentMethod,
-            event: output.event,
-          },
-        ])
+        .insert([{
+          name: event.name,
+          'event-day': event.date,
+          'event-type': event.type,
+          observations: event.observations,
+        }])
         .select()
         .single();
 
@@ -39,13 +34,11 @@ export class OutputsService {
       // Map back to expected format
       const mappedData = {
         ...data,
-        date: data["output-day"],
-        paymentMethod: data["payment-type"],
-        isRecurring: data.recurrence,
+        date: data['event-day'],
+        type: data['event-type'],
       };
-      delete mappedData["output-day"];
-      delete mappedData["payment-type"];
-      delete mappedData.recurrence;
+      delete mappedData['event-day'];
+      delete mappedData['event-type'];
 
       return { data: mappedData, error: null };
     } catch (err) {
@@ -54,9 +47,9 @@ export class OutputsService {
   }
 
   /**
-   * Busca todas as saídas
+   * Busca todos os eventos
    */
-  async findAll(): Promise<ApiResponse<OutputsListResponse>> {
+  async findAll(): Promise<ApiResponse<EventsListResponse>> {
     try {
       const { data, error } = await supabase
         .from(this.tableName)
@@ -68,13 +61,11 @@ export class OutputsService {
       }
 
       // Map columns back
-      const mappedData =
-        data?.map((item) => ({
-          ...item,
-          date: item["output-day"],
-          paymentMethod: item["payment-type"],
-          isRecurring: item.recurrence,
-        })) || [];
+      const mappedData = data?.map(item => ({
+        ...item,
+        date: item['event-day'],
+        type: item['event-type'],
+      })) || [];
 
       return { data: mappedData, error: null };
     } catch (err) {
@@ -83,9 +74,9 @@ export class OutputsService {
   }
 
   /**
-   * Busca uma saída por ID
+   * Busca um evento por ID
    */
-  async findById(id: string): Promise<ApiResponse<OutputResponse>> {
+  async findById(id: string): Promise<ApiResponse<EventResponse>> {
     try {
       const { data, error } = await supabase
         .from(this.tableName)
@@ -100,9 +91,8 @@ export class OutputsService {
       // Map back
       const mappedData = {
         ...data,
-        date: data["output-day"],
-        paymentMethod: data["payment-type"],
-        isRecurring: data.recurrence,
+        date: data['event-day'],
+        type: data['event-type'],
       };
 
       return { data: mappedData, error: null };
@@ -112,27 +102,19 @@ export class OutputsService {
   }
 
   /**
-   * Atualiza uma saída
+   * Atualiza um evento
    */
   async update(
     id: string,
-    updates: UpdateOutputRequest,
-  ): Promise<ApiResponse<OutputResponse>> {
+    updates: UpdateEventRequest,
+  ): Promise<ApiResponse<EventResponse>> {
     try {
       // Map updates to column names
       const mappedUpdates: any = {};
-      if (updates.date !== undefined)
-        mappedUpdates["output-day"] = updates.date;
-      if (updates.category !== undefined)
-        mappedUpdates.category = updates.category;
-      if (updates.isRecurring !== undefined)
-        mappedUpdates.recurrence = updates.isRecurring;
-      if (updates.value !== undefined) mappedUpdates.value = updates.value;
-      if (updates.description !== undefined)
-        mappedUpdates.description = updates.description;
-      if (updates.paymentMethod !== undefined)
-        mappedUpdates["payment-type"] = updates.paymentMethod;
-      if (updates.event !== undefined) mappedUpdates.event = updates.event;
+      if (updates.name !== undefined) mappedUpdates.name = updates.name;
+      if (updates.date !== undefined) mappedUpdates['event-day'] = updates.date;
+      if (updates.type !== undefined) mappedUpdates['event-type'] = updates.type;
+      if (updates.observations !== undefined) mappedUpdates.observations = updates.observations;
 
       const { data, error } = await supabase
         .from(this.tableName)
@@ -148,9 +130,8 @@ export class OutputsService {
       // Map back
       const mappedData = {
         ...data,
-        date: data["output-day"],
-        paymentMethod: data["payment-type"],
-        isRecurring: data.recurrence,
+        date: data['event-day'],
+        type: data['event-type'],
       };
 
       return { data: mappedData, error: null };
@@ -160,7 +141,7 @@ export class OutputsService {
   }
 
   /**
-   * Deleta uma saída
+   * Deleta um evento
    */
   async delete(id: string): Promise<ApiResponse<null>> {
     try {
@@ -181,4 +162,4 @@ export class OutputsService {
 }
 
 // Exporta uma instância singleton da service
-export const outputsService = new OutputsService();
+export const eventsService = new EventsService();

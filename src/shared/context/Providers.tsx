@@ -1,6 +1,7 @@
-import React, { ReactNode } from 'react';
-import { SessionProvider } from './SessionContext';
-import { HashRouter } from 'react-router-dom';
+import React, { ReactNode } from "react";
+import { SessionProvider } from "./SessionContext";
+import { ToastProvider } from "./ToastContext";
+import { HashRouter } from "react-router-dom";
 
 interface ProvidersProps {
   children: ReactNode;
@@ -10,7 +11,9 @@ interface ProvidersProps {
 const Providers: React.FC<ProvidersProps> = ({ children }) => {
   return (
     <HashRouter>
-      <SessionProvider>{children}</SessionProvider>
+      <ToastProvider>
+        <SessionProvider>{children}</SessionProvider>
+      </ToastProvider>
     </HashRouter>
   );
 };

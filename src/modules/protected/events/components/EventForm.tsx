@@ -3,6 +3,7 @@ import { IEventFormProps, EventType } from '../types';
 import Input from '../../../../shared/components/Input';
 import Select from '../../../../shared/components/Select';
 import Button from '../../../../shared/components/Button';
+import { ClipLoader } from 'react-spinners';
 
 export default function EventForm({ formMethods, onSave, onCancel, isLoading }: IEventFormProps) {
   const { register, handleSubmit, formState: { errors } } = formMethods;
@@ -57,8 +58,8 @@ export default function EventForm({ formMethods, onSave, onCancel, isLoading }: 
             <Button type="button" variant="secondary" onClick={onCancel} disabled={isLoading}>
                 Cancelar
             </Button>
-            <Button type="submit" isLoading={isLoading}>
-                Salvar
+            <Button type="submit" disabled={isLoading}>
+                {isLoading ? <ClipLoader size={20} color="#ffffff" /> : 'Salvar'}
             </Button>
         </div>
       </div>

@@ -1,18 +1,18 @@
-
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { loginFormSchema, LoginFormSchema } from './schema';
-import { ILoginPresentationProps } from './types';
-import LoginPresentation from './presentation';
-import { useSession } from '../../../shared/hooks/useSession';
-import authService from '../../../shared/services/auth.service';
-import { UserLevel } from '../../../shared/@types/global';
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginFormSchema, LoginFormSchema } from "./schema";
+import { ILoginPresentationProps } from "./types";
+import LoginPresentation from "./presentation";
+import { useSession } from "../../../shared/hooks/useSession";
+import authService from "../../../shared/services/auth.service";
+import { IUser, UserLevel } from "../../../shared/@types/global";
+import { useToast } from "../../../shared/context/ToastContext";
 
 export default function LoginContainer() {
   const [isLoading, setIsLoading] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
   const { login } = useSession();
+  const { success, error } = useToast();
 
   const {
     register,
@@ -24,20 +24,24 @@ export default function LoginContainer() {
 
   const onSubmit = async (data: LoginFormSchema) => {
     setIsLoading(true);
-    setApiError(null);
     try {
-      // Mocking a successful API call
-      await authService.login(data);
-      const mockUser = {
-        name: 'John Doe',
-        email: data.email,
-        level: UserLevel.ADMIN,
-      };
-      const mockToken = 'fake-jwt-token-for-demonstration';
-      login(mockUser, mockToken);
-    } catch (error) {
-      console.error("Login failed:", error);
-      setApiError("Invalid email or password. Please try again.");
+      const authData = await authService.login(data);
+      if (authData.user) {
+        const user: IUser = {
+          name:
+            authData.user.user_metadata?.name || authData.user.email || "User",
+          email: authData.user.email || "",
+          level: UserLevel.ADMIN, // Assuming admin for now, can be fetched from profile
+        };
+        const token = authData.session?.access_token || "";
+        login(user, token);
+        success("Login realizado com sucesso!");
+      } else {
+        throw new Error("Login failed");
+      }
+    } catch (err: any) {
+      console.error("Login failed:", err);
+      error(err.message || "Erro ao fazer login. Verifique suas credenciais.");
     } finally {
       setIsLoading(false);
     }
@@ -49,7 +53,6 @@ export default function LoginContainer() {
     onSubmit,
     errors,
     isLoading,
-    apiError,
   };
 
   return <LoginPresentation {...presentationProps} />;

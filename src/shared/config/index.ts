@@ -10,6 +10,7 @@ declare global {
       readonly VITE_API_URL?: string;
       readonly VITE_SUPABASE_URL?: string;
       readonly VITE_SUPABASE_ANON_KEY?: string;
+      readonly VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY?: string;
     };
   }
 }
@@ -23,7 +24,7 @@ const config = {
   },
   SUPABASE: {
     URL: import.meta.env?.VITE_SUPABASE_URL || "",
-    ANON_KEY: import.meta.env?.VITE_SUPABASE_ANON_KEY || "",
+    ANON_KEY: import.meta.env?.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY || "",
   },
 };
 

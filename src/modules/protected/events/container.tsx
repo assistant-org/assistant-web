@@ -4,28 +4,34 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import EventsPresentation from './presentation';
 import { eventFormSchema, EventFormSchema } from './schema';
 import { IEventsPresentationProps, IEvent, EventType } from './types';
-import { IEntry, EventType as EntryEventType, PaymentMethod } from '../entries/types';
-
-// Mock data for events
-const mockEventsData: Omit<IEvent, 'totalRevenue'>[] = [
-    { id: 'evt1', name: 'Festa Junina Local', date: '2024-07-20', type: EventType.SINGLE, observations: 'Evento aberto ao público.' },
-    { id: 'evt2', name: 'Casamento S&J', date: '2024-07-18', type: EventType.CLOSED },
-    { id: 'evt3', name: 'Aniversário Sr. Carlos', date: '2024-07-15', type: EventType.CLOSED, observations: 'Festa privada.' },
-];
-
-// Mock entry data to calculate revenue
-const mockEntriesData: IEntry[] = [
-    { id: '1', date: '2024-07-20', category: 'Venda de Chopp', event: 'Festa Junina Local', eventType: EntryEventType.SINGLE, value: 1500 },
-    { id: '5', date: '2024-07-20', category: 'Serviço de Bar', event: 'Festa Junina Local', eventType: EntryEventType.SINGLE, value: 450 },
-    { id: '2', date: '2024-07-18', category: 'Serviço de Bar', event: 'Casamento S&J', eventType: EntryEventType.CLOSED, paymentMethod: PaymentMethod.PIX, value: 3500 },
-    { id: '3', date: '2024-07-15', category: 'Venda de Chopp', event: 'Aniversário Sr. Carlos', eventType: EntryEventType.CLOSED, paymentMethod: PaymentMethod.CARD, value: 2200 },
-];
+import { eventsService } from '../../../shared/services/events/events.service';
+import { useToast } from '../../../shared/context/ToastContext';
 
 export default function EventsContainer() {
-    const [events, setEvents] = useState<Omit<IEvent, 'totalRevenue'>[]>(mockEventsData);
+    const [events, setEvents] = useState<IEvent[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState<IEvent | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const { success, error: toastError } = useToast();
+
+    useEffect(() => {
+        loadEvents();
+    }, []);
+
+    const loadEvents = async () => {
+        setIsLoading(true);
+        setError(null);
+        const result = await eventsService.findAll();
+        if (result.error) {
+            setError(result.error);
+            toastError(result.error);
+        } else {
+            setEvents(result.data || []);
+        }
+        setIsLoading(false);
+    };
 
     const formMethods = useForm<EventFormSchema>({
         resolver: zodResolver(eventFormSchema),
@@ -45,11 +51,8 @@ export default function EventsContainer() {
     }, [editingEvent, isModalOpen, formMethods]);
 
     const eventsWithRevenue = useMemo((): IEvent[] => {
-        return events.map(event => {
-            const relatedEntries = mockEntriesData.filter(entry => entry.event === event.name);
-            const totalRevenue = relatedEntries.reduce((sum, entry) => sum + entry.value, 0);
-            return { ...event, totalRevenue };
-        });
+        // TODO: Calcular revenue baseado em entries relacionadas
+        return events.map(event => ({ ...event, totalRevenue: 0 }));
     }, [events]);
 
     const handleOpenModal = (event?: IEvent) => {
@@ -62,18 +65,36 @@ export default function EventsContainer() {
         setEditingEvent(null);
     };
 
-    const handleSaveEvent = (data: EventFormSchema) => {
+    const handleSaveEvent = async (data: EventFormSchema) => {
         setIsLoading(true);
-        setTimeout(() => {
+        setError(null);
+        try {
             if (editingEvent) {
-                setEvents(prev => prev.map(e => e.id === editingEvent.id ? { ...e, ...data, id: editingEvent.id } : e));
+                const result = await eventsService.update(editingEvent.id, data);
+                if (result.error) {
+                    setError(result.error);
+                    toastError(result.error);
+                } else {
+                    await loadEvents();
+                    handleCloseModal();
+                    success('Evento atualizado com sucesso!');
+                }
             } else {
-                const newEvent: IEvent = { ...data, id: String(Date.now()) };
-                setEvents(prev => [newEvent, ...prev]);
+                const result = await eventsService.create(data);
+                if (result.error) {
+                    setError(result.error);
+                    toastError(result.error);
+                } else {
+                    await loadEvents();
+                    handleCloseModal();
+                    success('Evento criado com sucesso!');
+                }
             }
-            setIsLoading(false);
-            handleCloseModal();
-        }, 1000);
+        } catch (err: any) {
+            setError(err.message || 'Erro interno');
+            toastError(err.message || 'Erro interno');
+        }
+        setIsLoading(false);
     };
 
     const presentationProps: IEventsPresentationProps = {
