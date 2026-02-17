@@ -1,9 +1,9 @@
-import { UseFormReturn } from 'react-hook-form';
-import { EventFormSchema } from './schema';
+import { UseFormReturn } from "react-hook-form";
+import { EventFormSchema } from "./schema";
 
 export enum EventType {
-  CLOSED = 'fechado',
-  SINGLE = 'avulso',
+  CLOSED = "CLOSED_EVENTS",
+  SINGLE = "OPEN_EVENTS",
 }
 
 export interface IEvent {
@@ -16,19 +16,19 @@ export interface IEvent {
 }
 
 export interface IEventsPresentationProps {
-    events: IEvent[];
-    onOpenModal: (event?: IEvent) => void;
-    isModalOpen: boolean;
-    onCloseModal: () => void;
-    editingEvent: IEvent | null;
-    formMethods: UseFormReturn<EventFormSchema>;
-    onSave: (data: EventFormSchema) => void;
-    isLoading: boolean;
+  events: IEvent[];
+  onOpenModal: (event?: IEvent) => void;
+  isModalOpen: boolean;
+  onCloseModal: () => void;
+  editingEvent: IEvent | null;
+  formMethods: UseFormReturn<EventFormSchema>;
+  onSave: (data: EventFormSchema) => void;
+  isLoading: boolean;
 }
 
 export interface IEventFormProps {
-    formMethods: UseFormReturn<EventFormSchema>;
-    onSave: (data: EventFormSchema) => void;
-    onCancel: () => void;
-    isLoading: boolean;
+  formMethods: UseFormReturn<EventFormSchema>;
+  onSave: (data: EventFormSchema) => void;
+  onCancel: () => void;
+  isLoading: boolean;
 }

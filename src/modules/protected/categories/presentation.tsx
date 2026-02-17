@@ -5,6 +5,7 @@ import Button from "../../../shared/components/Button";
 import Modal from "../../../shared/components/Modal";
 import CategoryForm from "./components/CategoryForm";
 import Switch from "../../../shared/components/Switch";
+import TableActions from "../../../shared/components/TableActions";
 
 const StatusBadge: React.FC<{ status: boolean }> = ({ status }) => {
   const baseClasses =
@@ -56,7 +57,7 @@ export default function CategoriesPresentation({
                 <th scope="col" className="px-6 py-3">
                   Status
                 </th>
-                <th scope="col" className="px-6 py-3 text-center">
+                <th scope="col" className="px-6 py-3">
                   Ações
                 </th>
               </tr>
@@ -82,12 +83,7 @@ export default function CategoriesPresentation({
                   </td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex items-center justify-center space-x-4">
-                      <button
-                        onClick={() => onOpenModal(category)}
-                        className="font-medium text-indigo-600 dark:text-indigo-500 hover:underline"
-                      >
-                        Editar
-                      </button>
+                      <TableActions onEdit={() => onOpenModal(category)} />
                       <Switch
                         checked={category.status}
                         onChange={() => onToggleStatus(category.id)}

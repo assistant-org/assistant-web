@@ -12,6 +12,7 @@ export default function OutputForm({
   onCancel,
   isLoading,
   categories,
+  events,
 }: IOutputFormProps) {
   const {
     register,
@@ -48,28 +49,25 @@ export default function OutputForm({
           register={register("category")}
           error={errors.category?.message}
           disabled={isLoading}
-        >
-          <option value="">Selecione...</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.name}>
-              {cat.name}
-            </option>
-          ))}
-        </Select>
-        <input type="hidden" {...register("type")} value="variavel" />
+          options={categories}
+          optionName="name"
+          optionId="id"
+        />
         <Select
           id="paymentMethod"
           label="Forma de Pagamento"
           register={register("paymentMethod")}
           error={errors.paymentMethod?.message}
           disabled={isLoading}
-        >
-          <option value="">Selecione...</option>
-          <option value={PaymentMethod.MONEY}>Dinheiro</option>
-          <option value={PaymentMethod.PIX}>Pix</option>
-          <option value={PaymentMethod.DEBIT_CARD}>Cartão de Débito</option>
-          <option value={PaymentMethod.CREDIT_CARD}>Cartão de Crédito</option>
-        </Select>
+          options={[
+            { id: PaymentMethod.MONEY, name: "Dinheiro" },
+            { id: PaymentMethod.PIX, name: "Pix" },
+            { id: PaymentMethod.DEBIT_CARD, name: "Cartão de Débito" },
+            { id: PaymentMethod.CREDIT_CARD, name: "Cartão de Crédito" },
+          ]}
+          optionName="name"
+          optionId="id"
+        />
         <div className="md:col-span-2">
           <label
             htmlFor="description"
@@ -86,13 +84,15 @@ export default function OutputForm({
           ></textarea>
         </div>
         <div className="md:col-span-2">
-          <Input
+          <Select
             id="event"
             label="Evento (opcional)"
-            type="text"
             register={register("event")}
             error={errors.event?.message}
             disabled={isLoading}
+            options={events}
+            optionName="name"
+            optionId="id"
           />
         </div>
         <div className="md:col-span-2 flex items-start space-x-4">

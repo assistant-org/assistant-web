@@ -2,7 +2,7 @@ export interface Event {
   id?: string;
   name: string;
   date: string;
-  type: string; // 'fechado' | 'avulso'
+  type: string;
   observations?: string;
   created_at?: string;
   updated_at?: string;

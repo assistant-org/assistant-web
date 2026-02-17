@@ -6,15 +6,12 @@ export const outputFormSchema = z.object({
     .number({ error: "Valor é obrigatório" })
     .min(0.01, "Valor deve ser maior que zero"),
   date: z.string().min(1, "Data é obrigatória"),
-  category: z.string().min(1, "Categoria é obrigatória"),
-  type: z.nativeEnum(OutputType, { error: "Tipo é obrigatório" }),
+  category: z.coerce.string().min(1, "Categoria é obrigatória"),
   paymentMethod: z.nativeEnum(PaymentMethod, {
     error: "Forma de pagamento é obrigatória",
   }),
   description: z.string().optional(),
-  isRecurring: z.boolean().optional(),
-  recurrenceDay: z.number().optional(),
-  event: z.string().optional(),
+  event: z.coerce.string().optional(),
 });
 // .superRefine((data, ctx) => {
 //   data.isRecurring ? OutputType.FIXED : OutputType.VARIABLE;

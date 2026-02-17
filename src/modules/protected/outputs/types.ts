@@ -17,7 +17,7 @@ export interface IOutput {
   id: string;
   date: string;
   category: string;
-  type: OutputType;
+  type?: OutputType;
   paymentMethod: PaymentMethod;
   value: number;
   description?: string;
@@ -30,7 +30,6 @@ export interface IFilters {
   startDate: string;
   endDate: string;
   category: string;
-  type: string;
   paymentMethod: string;
 }
 
@@ -41,13 +40,16 @@ export interface IOutputsPresentationProps {
   onClearFilters: () => void;
   onOpenModal: (output?: IOutput) => void;
   onDeleteOutput: (id: string) => void;
+  onViewDetails: (output: IOutput) => void;
   isModalOpen: boolean;
   onCloseModal: () => void;
   editingOutput: IOutput | null;
+  viewingOutput: IOutput | null;
   formMethods: UseFormReturn<OutputFormSchema>;
   onSave: (data: OutputFormSchema) => void;
   isLoading: boolean;
   categories: any[]; // Adicionar tipo correto depois
+  events: any[]; // Adicionar tipo correto depois
 }
 
 export interface IOutputFormProps {
@@ -56,11 +58,5 @@ export interface IOutputFormProps {
   onCancel: () => void;
   isLoading: boolean;
   categories: any[];
-}
-
-export interface IOutputFormProps {
-  formMethods: UseFormReturn<OutputFormSchema>;
-  onSave: (data: OutputFormSchema) => void;
-  onCancel: () => void;
-  isLoading: boolean;
+  events: any[];
 }

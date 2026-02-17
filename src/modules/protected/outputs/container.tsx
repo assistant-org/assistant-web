@@ -13,12 +13,12 @@ import {
 import { outputsService } from "../../../shared/services/outputs/outputs.serivce";
 import { useCategories } from "../../../shared/hooks/useCategories";
 import { useToast } from "../../../shared/context/ToastContext";
+import { eventsService } from "../../../shared/services/events/events.service";
 
 const initialFilters: IFilters = {
   startDate: "",
   endDate: "",
   category: "",
-  type: "",
   paymentMethod: "",
 };
 
@@ -27,14 +27,17 @@ export default function OutputsContainer() {
   const [filters, setFilters] = useState<IFilters>(initialFilters);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOutput, setEditingOutput] = useState<IOutput | null>(null);
+  const [viewingOutput, setViewingOutput] = useState<IOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [events, setEvents] = useState<any[]>([]);
 
   const { categories, loading: categoriesLoading } = useCategories();
   const { success, error: toastError } = useToast();
 
   useEffect(() => {
     loadOutputs();
+    loadEvents();
   }, []);
 
   const loadOutputs = async () => {
@@ -49,31 +52,38 @@ export default function OutputsContainer() {
     setIsLoading(false);
   };
 
+  const loadEvents = async () => {
+    const result = await eventsService.findAll();
+    if (result.data) {
+      setEvents(result.data);
+    }
+  };
+
   const formMethods = useForm<OutputFormSchema>({
-    resolver: zodResolver(outputFormSchema),
+    resolver: zodResolver(outputFormSchema) as Resolver<OutputFormSchema>,
   });
 
   useEffect(() => {
     if (editingOutput) {
+      const categoryId =
+        categories.find((c) => c.name === editingOutput.category)?.id ||
+        editingOutput.category;
       formMethods.reset({
         ...editingOutput,
+        category: categoryId,
         value: Number(editingOutput.value) || 0,
-        recurrenceDay: Number(editingOutput.recurrenceDay) || undefined,
       });
     } else {
       formMethods.reset({
         date: new Date().toISOString().split("T")[0],
         value: undefined,
         category: "",
-        type: OutputType.VARIABLE,
         paymentMethod: undefined,
         description: "",
         event: "",
-        isRecurring: false,
-        recurrenceDay: undefined,
       });
     }
-  }, [editingOutput, isModalOpen, formMethods]);
+  }, [editingOutput, isModalOpen, formMethods, categories]);
 
   const handleFilterChange = (field: keyof IFilters, value: string) => {
     setFilters((prev) => ({ ...prev, [field]: value }));
@@ -88,7 +98,6 @@ export default function OutputsContainer() {
       const categoryMatch = filters.category
         ? output.category === filters.category
         : true;
-      const typeMatch = filters.type ? output.type === filters.type : true;
       const paymentMethodMatch = filters.paymentMethod
         ? output.paymentMethod === filters.paymentMethod
         : true;
@@ -100,11 +109,7 @@ export default function OutputsContainer() {
         : true;
 
       return (
-        categoryMatch &&
-        typeMatch &&
-        paymentMethodMatch &&
-        startDateMatch &&
-        endDateMatch
+        categoryMatch && paymentMethodMatch && startDateMatch && endDateMatch
       );
     });
   }, [outputs, filters]);
@@ -117,17 +122,21 @@ export default function OutputsContainer() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingOutput(null);
+    setViewingOutput(null);
+  };
+
+  const handleViewDetails = (output: IOutput) => {
+    setViewingOutput(output);
   };
 
   const handleSaveOutput = async (data: OutputFormSchema) => {
     setIsLoading(true);
     setError(null);
     try {
-      // Definir type baseado em isRecurring, mas comentado por enquanto
-      // const type = data.isRecurring ? OutputType.FIXED : OutputType.VARIABLE;
-      // const type = OutputType.VARIABLE; // Temporário
-
       const outputData = { ...data };
+      if (outputData.event === "" || outputData.event === "null") {
+        outputData.event = null;
+      }
 
       if (editingOutput) {
         const result = await outputsService.update(
@@ -156,7 +165,6 @@ export default function OutputsContainer() {
     }
     setIsLoading(false);
   };
-
   const handleDeleteOutput = async (id: string) => {
     if (window.confirm("Tem certeza que deseja excluir esta saída?")) {
       setError(null);
@@ -177,13 +185,16 @@ export default function OutputsContainer() {
     onClearFilters: handleClearFilters,
     onOpenModal: handleOpenModal,
     onDeleteOutput: handleDeleteOutput,
+    onViewDetails: handleViewDetails,
     isModalOpen,
     onCloseModal: handleCloseModal,
     editingOutput,
+    viewingOutput,
     formMethods,
     onSave: handleSaveOutput,
     isLoading,
     categories,
+    events,
   };
 
   return <OutputsPresentation {...presentationProps} />;

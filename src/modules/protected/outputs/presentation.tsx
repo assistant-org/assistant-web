@@ -4,6 +4,7 @@ import Card from "../../../shared/components/Card";
 import Button from "../../../shared/components/Button";
 import Modal from "../../../shared/components/Modal";
 import OutputForm from "./components/OutputForm";
+import TableActions from "../../../shared/components/TableActions";
 
 const inputBaseClasses =
   "block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:border-indigo-500 focus:ring-indigo-500";
@@ -17,13 +18,16 @@ export default function OutputsPresentation({
   onClearFilters,
   onOpenModal,
   onDeleteOutput,
+  onViewDetails,
   isModalOpen,
   onCloseModal,
   editingOutput,
+  viewingOutput,
   formMethods,
   onSave,
   isLoading,
   categories,
+  events,
 }: IOutputsPresentationProps) {
   const totalOutputs = outputs.reduce((acc, output) => acc + output.value, 0);
 
@@ -74,21 +78,7 @@ export default function OutputsPresentation({
               ))}
             </select>
           </div>
-          <div className="lg:col-span-2">
-            <label htmlFor="filter-type" className={labelBaseClasses}>
-              Tipo
-            </label>
-            <select
-              id="filter-type"
-              value={filters.type}
-              onChange={(e) => onFilterChange("type", e.target.value)}
-              className={inputBaseClasses}
-            >
-              <option value="">Todos</option>
-              <option value={OutputType.FIXED}>Fixa</option>
-              <option value={OutputType.VARIABLE}>Variável</option>
-            </select>
-          </div>
+          <div className="lg:col-span-2"></div>
           <div className="lg:col-span-3">
             <label htmlFor="filter-paymentMethod" className={labelBaseClasses}>
               Forma de Pgto
@@ -100,10 +90,12 @@ export default function OutputsPresentation({
               className={inputBaseClasses}
             >
               <option value="">Todas</option>
-              <option value={PaymentMethod.CASH}>Dinheiro</option>
+              <option value={PaymentMethod.MONEY}>Dinheiro</option>
               <option value={PaymentMethod.PIX}>Pix</option>
-              <option value={PaymentMethod.CARD}>Cartão</option>
-              <option value={PaymentMethod.BANK_TRANSFER}>Transferência</option>
+              <option value={PaymentMethod.CREDIT_CARD}>
+                Cartão de Crédito
+              </option>
+              <option value={PaymentMethod.DEBIT_CARD}>Cartão de Débito</option>
             </select>
           </div>
           <div className="lg:col-span-1">
@@ -126,15 +118,12 @@ export default function OutputsPresentation({
                   Categoria
                 </th>
                 <th scope="col" className="px-6 py-3">
-                  Tipo
-                </th>
-                <th scope="col" className="px-6 py-3">
                   Pgto
                 </th>
                 <th scope="col" className="px-6 py-3 text-right">
                   Valor
                 </th>
-                <th scope="col" className="px-6 py-3 text-center">
+                <th scope="col" className="px-6 py-3">
                   Ações
                 </th>
               </tr>
@@ -149,29 +138,21 @@ export default function OutputsPresentation({
                     {new Date(output.date).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4">{output.category}</td>
-                  <td className="px-6 py-4 capitalize">{output.type}</td>
                   <td className="px-6 py-4 capitalize">
                     {output.paymentMethod}
                   </td>
-                  <td className="px-6 py-4 text-right font-medium text-red-500">
+                  <td className="px-6 py-4 text-right font-medium text-white">
                     {output.value.toLocaleString("pt-BR", {
                       style: "currency",
                       currency: "BRL",
                     })}
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <button
-                      onClick={() => onOpenModal(output)}
-                      className="font-medium text-indigo-600 dark:text-indigo-500 hover:underline mr-4"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => onDeleteOutput(output.id)}
-                      className="font-medium text-red-600 dark:text-red-500 hover:underline"
-                    >
-                      Excluir
-                    </button>
+                    <TableActions
+                      onViewDetails={() => onViewDetails(output)}
+                      onEdit={() => onOpenModal(output)}
+                      onDelete={() => onDeleteOutput(output.id)}
+                    />
                   </td>
                 </tr>
               ))}
@@ -205,8 +186,84 @@ export default function OutputsPresentation({
           onCancel={onCloseModal}
           isLoading={isLoading}
           categories={categories}
+          events={events}
         />
       </Modal>
+
+      {viewingOutput && (
+        <Modal
+          isOpen={!!viewingOutput}
+          onClose={onCloseModal}
+          title="Detalhes da Saída"
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Data
+              </label>
+              <p className="mt-1 text-sm text-gray-900 dark:text-white">
+                {new Date(viewingOutput.date).toLocaleDateString()}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Categoria
+              </label>
+              <p className="mt-1 text-sm text-gray-900 dark:text-white">
+                {viewingOutput.category}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Tipo
+              </label>
+              <p className="mt-1 text-sm text-gray-900 dark:text-white capitalize">
+                {viewingOutput.type}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Forma de Pagamento
+              </label>
+              <p className="mt-1 text-sm text-gray-900 dark:text-white capitalize">
+                {viewingOutput.paymentMethod}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Valor
+              </label>
+              <p className="mt-1 text-sm text-gray-900 dark:text-white font-medium text-red-500">
+                {viewingOutput.value.toLocaleString("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                })}
+              </p>
+            </div>
+            {viewingOutput.description && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Descrição
+                </label>
+                <p className="mt-1 text-sm text-gray-900 dark:text-white">
+                  {viewingOutput.description}
+                </p>
+              </div>
+            )}
+            {viewingOutput.event && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Evento
+                </label>
+                <p className="mt-1 text-sm text-gray-900 dark:text-white">
+                  {events.find((e) => e.id === viewingOutput.event)?.name ||
+                    viewingOutput.event}
+                </p>
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

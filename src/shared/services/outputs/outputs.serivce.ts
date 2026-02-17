@@ -7,7 +7,7 @@ import {
 } from "./models/response/response";
 
 export class OutputsService {
-  private tableName = "outputs";
+  private tableName = "output";
 
   /**
    * Cria uma nova saída
@@ -22,14 +22,13 @@ export class OutputsService {
           {
             "output-day": output.date,
             category: output.category,
-            recurrence: output.isRecurring,
             value: output.value,
             description: output.description,
             "payment-type": output.paymentMethod,
-            event: output.event,
+            event: output.event === "null" ? null : output.event || null,
           },
         ])
-        .select()
+        .select("*, categories(name)")
         .single();
 
       if (error) {
@@ -42,6 +41,7 @@ export class OutputsService {
         date: data["output-day"],
         paymentMethod: data["payment-type"],
         isRecurring: data.recurrence,
+        category: data.categories?.name || data.category,
       };
       delete mappedData["output-day"];
       delete mappedData["payment-type"];
@@ -60,7 +60,7 @@ export class OutputsService {
     try {
       const { data, error } = await supabase
         .from(this.tableName)
-        .select("*")
+        .select("*, categories(name)")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -71,6 +71,7 @@ export class OutputsService {
       const mappedData =
         data?.map((item) => ({
           ...item,
+          category: item.categories?.name || item.category,
           date: item["output-day"],
           paymentMethod: item["payment-type"],
           isRecurring: item.recurrence,
@@ -125,20 +126,22 @@ export class OutputsService {
         mappedUpdates["output-day"] = updates.date;
       if (updates.category !== undefined)
         mappedUpdates.category = updates.category;
-      if (updates.isRecurring !== undefined)
-        mappedUpdates.recurrence = updates.isRecurring;
       if (updates.value !== undefined) mappedUpdates.value = updates.value;
       if (updates.description !== undefined)
         mappedUpdates.description = updates.description;
       if (updates.paymentMethod !== undefined)
         mappedUpdates["payment-type"] = updates.paymentMethod;
-      if (updates.event !== undefined) mappedUpdates.event = updates.event;
+      if (updates.event !== undefined)
+        mappedUpdates.event =
+          updates.event === "" || updates.event === "null"
+            ? null
+            : updates.event;
 
       const { data, error } = await supabase
         .from(this.tableName)
         .update(mappedUpdates)
         .eq("id", id)
-        .select()
+        .select("*, categories(name)")
         .single();
 
       if (error) {
@@ -151,6 +154,7 @@ export class OutputsService {
         date: data["output-day"],
         paymentMethod: data["payment-type"],
         isRecurring: data.recurrence,
+        category: data.categories?.name || data.category,
       };
 
       return { data: mappedData, error: null };
