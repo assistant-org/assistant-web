@@ -11,6 +11,8 @@ export default function EntryForm({
   onCancel,
   isLoading,
   availableStockItems,
+  categories = [],
+  events = [],
 }: IEntryFormProps) {
   const {
     register,
@@ -52,18 +54,15 @@ export default function EntryForm({
           register={register("category")}
           error={errors.category?.message}
           disabled={isLoading}
-          options={[
-            { id: "Venda de Chopp", name: "Venda de Chopp" },
-            { id: "Serviço de Bar", name: "Serviço de Bar" },
-            { id: "Aluguel de Equipamento", name: "Aluguel de Equipamento" },
-          ]}
+          options={categories}
           optionName="name"
           optionId="id"
         />
         <Input
           id="event"
-          label="Evento Relacionado"
+          label="Evento Relacionado (Opcional)"
           type="text"
+          placeholder="Digite o nome do evento..."
           register={register("event")}
           error={errors.event?.message}
           disabled={isLoading}

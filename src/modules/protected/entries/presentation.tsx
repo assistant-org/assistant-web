@@ -25,6 +25,8 @@ export default function EntriesPresentation({
   onSave,
   isLoading,
   availableStockItems,
+  categories,
+  events,
 }: IEntriesPresentationProps) {
   const totalEntries = entries.reduce((acc, entry) => acc + entry.value, 0);
 
@@ -214,6 +216,8 @@ export default function EntriesPresentation({
           onCancel={onCloseModal}
           isLoading={isLoading}
           availableStockItems={availableStockItems}
+          categories={categories}
+          events={events}
         />
       </Modal>
     </div>

@@ -14,6 +14,7 @@ import { outputsService } from "../../../shared/services/outputs/outputs.serivce
 import { useCategories } from "../../../shared/hooks/useCategories";
 import { useToast } from "../../../shared/context/ToastContext";
 import { eventsService } from "../../../shared/services/events/events.service";
+import { CategoryType } from "../categories/types";
 
 const initialFilters: IFilters = {
   startDate: "",
@@ -85,6 +86,10 @@ export default function OutputsContainer() {
     }
   }, [editingOutput, isModalOpen, formMethods, categories]);
 
+  const filteredCategories = useMemo(() => {
+    return categories.filter((c) => c.type === CategoryType.OUTPUT);
+  }, [categories]);
+
   const handleFilterChange = (field: keyof IFilters, value: string) => {
     setFilters((prev) => ({ ...prev, [field]: value }));
   };
@@ -151,7 +156,10 @@ export default function OutputsContainer() {
           success("Saída atualizada com sucesso!");
         }
       } else {
-        const result = await outputsService.create(outputData);
+        const result = await outputsService.create({
+          ...outputData,
+          paymentMethod: outputData.paymentMethod || "",
+        });
         if (result.error) {
           toastError(result.error);
         } else {
@@ -193,7 +201,7 @@ export default function OutputsContainer() {
     formMethods,
     onSave: handleSaveOutput,
     isLoading,
-    categories,
+    categories: filteredCategories,
     events,
   };
 

@@ -7,9 +7,7 @@ export const outputFormSchema = z.object({
     .min(0.01, "Valor deve ser maior que zero"),
   date: z.string().min(1, "Data é obrigatória"),
   category: z.coerce.string().min(1, "Categoria é obrigatória"),
-  paymentMethod: z.nativeEnum(PaymentMethod, {
-    error: "Forma de pagamento é obrigatória",
-  }),
+  paymentMethod: z.nativeEnum(PaymentMethod).optional().nullable(),
   description: z.string().optional(),
   event: z.coerce.string().optional(),
 });

@@ -17,7 +17,7 @@ const TableActions: React.FC<TableActionsProps> = ({
       {onViewDetails && (
         <button
           onClick={onViewDetails}
-          className="text-blue-600 hover:text-blue-800 dark:text-blue-500 dark:hover:text-blue-400"
+          className="text-blue-600 hover:text-blue-800 dark:text-white dark:hover:text-blue-400"
           title="Detalhes"
         >
           <Eye className="w-5 h-5" />
@@ -26,7 +26,7 @@ const TableActions: React.FC<TableActionsProps> = ({
       {onEdit && (
         <button
           onClick={onEdit}
-          className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-500 dark:hover:text-indigo-400"
+          className="text-indigo-600 hover:text-indigo-800 dark:text-white dark:hover:text-indigo-400"
           title="Editar"
         >
           <Pencil className="w-5 h-5" />
@@ -35,7 +35,7 @@ const TableActions: React.FC<TableActionsProps> = ({
       {onDelete && (
         <button
           onClick={onDelete}
-          className="text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-400"
+          className="text-red-600 hover:text-red-800 dark:text-indigo-700 dark:hover:text-red-400"
           title="Excluir"
         >
           <Trash2 className="w-5 h-5" />
