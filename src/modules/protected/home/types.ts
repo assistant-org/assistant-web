@@ -2,7 +2,7 @@ export interface IMetric {
   title: string;
   value: string;
   change?: string;
-  changeType?: 'increase' | 'decrease';
+  changeType?: "increase" | "decrease";
 }
 
 export interface IChartData {
@@ -18,16 +18,16 @@ export interface IChartData {
 }
 
 export interface IKPI {
-    title: string;
-    value: string;
+  title: string;
+  value: string;
 }
 
 export interface ITransaction {
-    id: number;
-    description: string;
-    amount: number;
-    type: 'income' | 'expense';
-    date: string;
+  id: number;
+  description: string;
+  amount: number;
+  type: "income" | "expense";
+  date: string;
 }
 
 export interface IExpenseByCategory {
@@ -47,4 +47,6 @@ export interface IDashboardData {
 export interface IHomePresentationProps {
   readonly dashboardData: IDashboardData | null;
   readonly userName: string | undefined;
+  readonly loading: boolean;
+  readonly error: string | null;
 }

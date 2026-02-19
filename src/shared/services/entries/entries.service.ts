@@ -23,7 +23,7 @@ export class EntriesService {
           {
             "entry-day": entry.date,
             category: entry.category,
-            value: entry.value,
+            value: Number(entry.value),
             description: entry.description,
             "payment-type": entry.paymentMethod,
             event: entry.event === "null" ? null : entry.event || null,

@@ -112,10 +112,22 @@ export default function EntriesContainer() {
     setFilters(initialFilters);
   };
 
+  const getEventName = (eventId: string | null | undefined) => {
+    if (!eventId) return null;
+    return events.find((e) => e.id === eventId)?.name || eventId;
+  };
+
+  const entriesWithEventNames = useMemo(() => {
+    return entries.map((entry) => ({
+      ...entry,
+      eventName: getEventName(entry.event),
+    }));
+  }, [entries, events]);
+
   const filteredEntries = useMemo(() => {
-    return entries.filter((entry) => {
+    return entriesWithEventNames.filter((entry) => {
       const eventMatch = filters.event
-        ? entry.event?.toLowerCase().includes(filters.event.toLowerCase())
+        ? entry.eventName?.toLowerCase().includes(filters.event.toLowerCase())
         : true;
       const categoryMatch = filters.category
         ? entry.category === filters.category
@@ -142,7 +154,7 @@ export default function EntriesContainer() {
         endDateMatch
       );
     });
-  }, [entries, filters]);
+  }, [entriesWithEventNames, filters]);
 
   const availableStockItems = useMemo(() => {
     return stockItems.filter(
@@ -172,6 +184,13 @@ export default function EntriesContainer() {
 
       if (entryData.event === "" || entryData.event === "null") {
         entryData.event = null;
+      }
+
+      if (
+        entryData.paymentMethod === "" ||
+        entryData.paymentMethod === "null"
+      ) {
+        entryData.paymentMethod = null;
       }
 
       if (editingEntry) {
@@ -229,6 +248,7 @@ export default function EntriesContainer() {
     availableStockItems,
     categories: filteredCategories,
     events,
+    getEventName,
   };
 
   return <EntriesPresentation {...presentationProps} />;

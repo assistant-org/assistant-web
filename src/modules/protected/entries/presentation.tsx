@@ -27,6 +27,7 @@ export default function EntriesPresentation({
   availableStockItems,
   categories,
   events,
+  getEventName,
 }: IEntriesPresentationProps) {
   const totalEntries = entries.reduce((acc, entry) => acc + entry.value, 0);
 
@@ -144,9 +145,6 @@ export default function EntriesPresentation({
                   Evento
                 </th>
                 <th scope="col" className="px-6 py-3">
-                  Tipo
-                </th>
-                <th scope="col" className="px-6 py-3">
                   Pgto
                 </th>
                 <th scope="col" className="px-6 py-3 text-right">
@@ -167,8 +165,9 @@ export default function EntriesPresentation({
                     {new Date(entry.date).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4">{entry.category}</td>
-                  <td className="px-6 py-4">{entry.event || "-"}</td>
-                  <td className="px-6 py-4 capitalize">{entry.eventType}</td>
+                  <td className="px-6 py-4">
+                    {getEventName(entry.event) || "-"}
+                  </td>
                   <td className="px-6 py-4 capitalize">
                     {entry.paymentMethod || "-"}
                   </td>

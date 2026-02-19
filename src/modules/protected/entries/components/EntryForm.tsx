@@ -1,7 +1,8 @@
 import React from "react";
-import { useFieldArray, useWatch } from "react-hook-form";
+import { Controller, useFieldArray } from "react-hook-form";
 import { IEntryFormProps, EventType, PaymentMethod } from "../types";
 import Input from "../../../../shared/components/Input";
+import MoneyInput from "../../../../shared/components/MoneyInput";
 import Select from "../../../../shared/components/Select";
 import Button from "../../../../shared/components/Button";
 
@@ -21,8 +22,6 @@ export default function EntryForm({
     formState: { errors },
   } = formMethods;
 
-  const eventType = useWatch({ control, name: "eventType" });
-
   const { fields, append, remove } = useFieldArray({
     control,
     name: "beerControl",
@@ -31,14 +30,22 @@ export default function EntryForm({
   return (
     <form onSubmit={handleSubmit(onSave)}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Input
-          id="value"
-          label="Valor"
-          type="number"
-          step="0.01"
-          register={register("value", { valueAsNumber: true })}
-          error={errors.value?.message}
-          disabled={isLoading}
+        <Controller
+          name="value"
+          control={control}
+          render={({ field }) => (
+            <MoneyInput
+              id="value"
+              label="Valor"
+              value={field.value}
+              onChange={(formatted) => {
+                const num = parseFloat(formatted.replace(/\D/g, "")) / 100;
+                field.onChange(isNaN(num) ? undefined : num);
+              }}
+              error={errors.value?.message}
+              disabled={isLoading}
+            />
+          )}
         />
         <Input
           id="date"
@@ -58,14 +65,16 @@ export default function EntryForm({
           optionName="name"
           optionId="id"
         />
-        <Input
+        <Select
           id="event"
           label="Evento Relacionado (Opcional)"
-          type="text"
-          placeholder="Digite o nome do evento..."
           register={register("event")}
           error={errors.event?.message}
           disabled={isLoading}
+          options={events}
+          optionName="name"
+          optionId="id"
+          placeholder="Selecione um evento..."
         />
         <Select
           id="eventType"
@@ -82,11 +91,12 @@ export default function EntryForm({
         />
         <Select
           id="paymentMethod"
-          label="Forma de Pagamento"
+          label="Forma de Pagamento (Opcional)"
           register={register("paymentMethod")}
           error={errors.paymentMethod?.message}
           disabled={isLoading}
           options={[
+            { id: "", name: "Selecione uma forma de pagamento..." },
             { id: PaymentMethod.CASH, name: "Dinheiro" },
             { id: PaymentMethod.PIX, name: "Pix" },
             { id: PaymentMethod.CARD, name: "Cartão" },
@@ -105,7 +115,7 @@ export default function EntryForm({
             id="description"
             {...register("description")}
             rows={3}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600"
+            className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2"
           ></textarea>
         </div>
       </div>

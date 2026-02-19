@@ -56,6 +56,7 @@ export interface IEntriesPresentationProps {
   availableStockItems: IStockItem[];
   categories: any[];
   events: any[];
+  getEventName: (eventId: string | null | undefined) => string | null;
 }
 
 export interface IEntryFormProps {

@@ -22,7 +22,7 @@ export class OutputsService {
           {
             "output-day": output.date,
             category: output.category,
-            value: output.value,
+            value: Number(output.value),
             description: output.description,
             "payment-type": output.paymentMethod,
             event: output.event === "null" ? null : output.event || null,
