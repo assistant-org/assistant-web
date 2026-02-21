@@ -57,6 +57,10 @@ export interface IEntriesPresentationProps {
   categories: any[];
   events: any[];
   getEventName: (eventId: string | null | undefined) => string | null;
+  isDeleteModalOpen: boolean;
+  onCloseDeleteModal: () => void;
+  onConfirmDelete: () => void;
+  isDeleting: boolean;
 }
 
 export interface IEntryFormProps {

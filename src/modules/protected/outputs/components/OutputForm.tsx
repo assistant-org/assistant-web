@@ -37,9 +37,7 @@ export default function OutputForm({
               id="value"
               label="Valor"
               value={field.value}
-              onChange={(formatted) => {
-                field.onChange(formatted);
-              }}
+              onChange={field.onChange}
               error={errors.value?.message}
               disabled={isLoading}
             />

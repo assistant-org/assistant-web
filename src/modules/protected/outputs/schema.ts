@@ -2,16 +2,9 @@ import { z } from "zod";
 import { OutputType, PaymentMethod } from "./types";
 
 export const outputFormSchema = z.object({
-  value: z.preprocess(
-    (val) => {
-      if (typeof val === "string") {
-        const clean = val.replace(/\./g, "").replace(",", ".");
-        return parseFloat(clean);
-      }
-      return val;
-    },
-    z.number().min(0.01, "Valor deve ser maior que zero"),
-  ),
+  value: z
+    .number({ error: "Valor é obrigatório" })
+    .min(0.01, "Valor deve ser maior que zero"),
   date: z.string().min(1, "Data é obrigatória"),
   category: z.coerce.string().min(1, "Categoria é obrigatória"),
   paymentMethod: z.nativeEnum(PaymentMethod, {

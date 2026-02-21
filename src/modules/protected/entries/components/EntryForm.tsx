@@ -38,10 +38,7 @@ export default function EntryForm({
               id="value"
               label="Valor"
               value={field.value}
-              onChange={(formatted) => {
-                const num = parseFloat(formatted.replace(/\D/g, "")) / 100;
-                field.onChange(isNaN(num) ? undefined : num);
-              }}
+              onChange={field.onChange}
               error={errors.value?.message}
               disabled={isLoading}
             />

@@ -1,167 +1,52 @@
-import React, { forwardRef, useEffect, useId, useRef } from "react";
+import React, { useId, useState, useEffect } from "react";
 
 // ─────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────
 
 /**
- * Converts a pt-BR formatted money string ("1.234,56") back to a number (1234.56).
- * Returns NaN if the string is empty/invalid.
+ * Converte número de centavos para string formatada pt-BR
+ * 12345 (centavos) → "123,45"
+ * 1234567 (centavos) → "12.345,67"
  */
-export const parseMoney = (formatted: string): number => {
-  const clean = formatted.replace(/\./g, "").replace(",", ".");
-  return parseFloat(clean);
-};
+const formatCentsToDisplay = (cents: number): string => {
+  if (cents === 0) return "0,00";
 
-const formatMoney = (value: string | number | null | undefined): string => {
-  if (value === null || value === undefined || value === "") return "";
-  const str = String(value);
+  const valueStr = cents.toString().padStart(3, "0");
+  const intPart = valueStr.slice(0, -2);
+  const decPart = valueStr.slice(-2);
 
-  // Se é um número (vindo de value externo), formata para display
-  if (!isNaN(Number(str))) {
-    const num = parseFloat(str);
-    if (isNaN(num)) return "";
-    return num.toLocaleString("pt-BR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  }
+  // Adiciona separador de milhares
+  const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
-  // Se já é uma string formatada (do input), retorna como está
-  return str;
+  return `${formattedInt},${decPart}`;
 };
 
 /**
- * Formata a entrada bruta do usuário (ex: "4973" ou "4973,00") para display pt-BR
- * "4973" → "4.973"
- * "4973," → "4.973,"
- * "4973,1" → "4.973,1"
- * "4973,00" → "4.973,00"
+ * Converte centavos para número decimal
+ * 12345 (centavos) → 123.45
  */
-const formatInputDisplay = (raw: string): string => {
-  if (!raw) return "";
-
-  // Permite apenas dígitos e uma vírgula
-  let clean = raw.replace(/[^\d,]/g, "");
-
-  // Garante apenas uma vírgula
-  const parts = clean.split(",");
-  if (parts.length > 2) {
-    clean = parts[0] + "," + parts.slice(1).join("");
-  }
-
-  const [intPart, decPart] = clean.split(",");
-
-  // Formata a parte inteira com separador de milhares
-  const formattedInt = intPart
-    ? intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".")
-    : "";
-
-  // Retorna com parte decimal se houver
-  return decPart !== undefined ? formattedInt + "," + decPart : formattedInt;
+const centsToNumber = (cents: number): number => {
+  return cents / 100;
 };
 
-const extractNumbers = (value: string): string => value.replace(/\D/g, "");
+/**
+ * Converte número decimal para centavos
+ * 123.45 → 12345 (centavos)
+ */
+const numberToCents = (num: number): number => {
+  return Math.round(num * 100);
+};
 
 // ─────────────────────────────────────────────
-// Inner field — exact same logic as reference component
-// ─────────────────────────────────────────────
-
-interface MoneyInputFieldProps extends Omit<
-  React.InputHTMLAttributes<HTMLInputElement>,
-  "onChange" | "value" | "onKeyPress" | "onInput"
-> {
-  value?: string | null;
-  onChange?: (value: string) => void;
-}
-
-const MoneyInputField = forwardRef<HTMLInputElement, MoneyInputFieldProps>(
-  ({ value, onChange, disabled, readOnly, ...props }, ref) => {
-    const inputRef = useRef<HTMLInputElement>(null);
-    const previousValueRef = useRef<string>("");
-
-    useEffect(() => {
-      if (typeof ref === "function") {
-        ref(inputRef.current);
-      } else if (ref) {
-        (ref as React.MutableRefObject<HTMLInputElement | null>).current =
-          inputRef.current;
-      }
-    }, [ref]);
-
-    useEffect(() => {
-      previousValueRef.current = value ? formatMoney(value) : "";
-    }, [value]);
-
-    const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      const allowedKeys = [
-        "Backspace",
-        "Delete",
-        "Tab",
-        "ArrowLeft",
-        "ArrowRight",
-        "ArrowUp",
-        "ArrowDown",
-        "Home",
-        "End",
-        "Enter",
-      ];
-      const isNumber = /[0-9]/.test(e.key);
-      const isAllowedKey = allowedKeys.includes(e.key);
-      const isControlKey = e.ctrlKey || e.metaKey || e.altKey;
-      if (!isNumber && !isAllowedKey && !isControlKey) {
-        e.preventDefault();
-      }
-    };
-
-    const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (disabled || readOnly) return;
-
-      const input = e.target;
-      const raw = input.value;
-
-      // Formata a entrada (ex: "4973,00" → "4.973,00")
-      const formatted = formatInputDisplay(raw);
-
-      onChange?.(formatted);
-      previousValueRef.current = formatted;
-
-      // Posiciona cursor sempre no final do texto formatado
-      setTimeout(() => {
-        if (inputRef.current) {
-          const finalLength = formatted.length;
-          inputRef.current.setSelectionRange(finalLength, finalLength);
-        }
-      }, 0);
-    };
-
-    return (
-      <input
-        {...props}
-        ref={inputRef}
-        disabled={disabled}
-        readOnly={readOnly}
-        type="text"
-        value={value ? formatMoney(value) : ""}
-        onKeyPress={handleKeyPress}
-        onInput={handleInput}
-        onChange={() => {}}
-      />
-    );
-  },
-);
-
-MoneyInputField.displayName = "MoneyInputField";
-
-// ─────────────────────────────────────────────
-// Public component
+// Componente Principal
 // ─────────────────────────────────────────────
 
 interface MoneyInputProps {
   id?: string;
   label: string;
-  value?: string | number | null;
-  onChange?: (value: string) => void;
+  value?: number | null | undefined;
+  onChange?: (value: number) => void;
   placeholder?: string;
   error?: string;
   disabled?: boolean;
@@ -172,7 +57,7 @@ const MoneyInput: React.FC<MoneyInputProps> = ({
   id,
   label,
   value,
-  onChange = () => {},
+  onChange,
   placeholder = "0,00",
   error,
   disabled = false,
@@ -180,6 +65,58 @@ const MoneyInput: React.FC<MoneyInputProps> = ({
 }) => {
   const generatedId = useId();
   const inputId = id ?? generatedId;
+
+  // Armazena os centavos internamente para facilitar a digitação
+  const [cents, setCents] = useState<number>(0);
+
+  // Sincroniza com o valor externo quando muda
+  useEffect(() => {
+    if (value !== undefined && value !== null) {
+      setCents(numberToCents(value));
+    } else {
+      setCents(0);
+    }
+  }, [value]);
+
+  const displayValue = cents === 0 ? "" : formatCentsToDisplay(cents);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const allowedKeys = [
+      "Backspace",
+      "Delete",
+      "Tab",
+      "ArrowLeft",
+      "ArrowRight",
+      "Home",
+      "End",
+      "Escape",
+    ];
+
+    const isNumber = /[0-9]/.test(e.key);
+    const isAllowedKey = allowedKeys.includes(e.key);
+    const isControlKey = e.ctrlKey || e.metaKey;
+
+    if (!isNumber && !isAllowedKey && !isControlKey) {
+      e.preventDefault();
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled || readOnly) return;
+
+    const input = e.target.value;
+    const numbersOnly = input.replace(/\D/g, "");
+
+    if (numbersOnly === "") {
+      setCents(0);
+      onChange?.(0);
+      return;
+    }
+
+    const newCents = parseInt(numbersOnly, 10);
+    setCents(newCents);
+    onChange?.(centsToNumber(newCents));
+  };
 
   const borderClass = error
     ? "border-red-500 focus:border-red-500 focus:ring-red-500"
@@ -197,11 +134,14 @@ const MoneyInput: React.FC<MoneyInputProps> = ({
         <span className="absolute inset-y-0 left-3 flex items-center text-gray-500 dark:text-gray-400 text-sm pointer-events-none select-none">
           R$
         </span>
-        <MoneyInputField
+        <input
           id={inputId}
+          type="text"
+          inputMode="numeric"
           className={`block w-full appearance-none rounded-md border pl-9 pr-3 py-2 placeholder-gray-400 shadow-sm focus:outline-none sm:text-sm dark:bg-gray-700 dark:text-white ${borderClass} ${disabled ? "opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-800" : ""}`}
-          value={value != null ? String(value) : ""}
-          onChange={onChange}
+          value={displayValue}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
           readOnly={readOnly}

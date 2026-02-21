@@ -32,6 +32,9 @@ export default function OutputsContainer() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [events, setEvents] = useState<any[]>([]);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [outputToDelete, setOutputToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { categories, loading: categoriesLoading } = useCategories();
   const { success, error: toastError } = useToast();
@@ -173,16 +176,32 @@ export default function OutputsContainer() {
     }
     setIsLoading(false);
   };
-  const handleDeleteOutput = async (id: string) => {
-    if (window.confirm("Tem certeza que deseja excluir esta saída?")) {
-      setError(null);
-      const result = await outputsService.delete(id);
-      if (result.error) {
-        toastError(result.error);
-      } else {
-        await loadOutputs();
-        success("Saída excluída com sucesso!");
-      }
+  const handleDeleteOutput = (id: string) => {
+    setOutputToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!outputToDelete) return;
+
+    setIsDeleting(true);
+    setError(null);
+    const result = await outputsService.delete(outputToDelete);
+    if (result.error) {
+      toastError(result.error);
+    } else {
+      await loadOutputs();
+      success("Saída excluída com sucesso!");
+    }
+    setIsDeleting(false);
+    setIsDeleteModalOpen(false);
+    setOutputToDelete(null);
+  };
+
+  const handleCloseDeleteModal = () => {
+    if (!isDeleting) {
+      setIsDeleteModalOpen(false);
+      setOutputToDelete(null);
     }
   };
 
@@ -203,6 +222,10 @@ export default function OutputsContainer() {
     isLoading,
     categories: filteredCategories,
     events,
+    isDeleteModalOpen,
+    onCloseDeleteModal: handleCloseDeleteModal,
+    onConfirmDelete: handleConfirmDelete,
+    isDeleting,
   };
 
   return <OutputsPresentation {...presentationProps} />;

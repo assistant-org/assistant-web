@@ -10,7 +10,7 @@ const beerControlSchema = z.object({
 export const entryFormSchema = z
   .object({
     value: z
-      .string({ error: "Valor é obrigatório" })
+      .number({ error: "Valor é obrigatório" })
       .min(0.01, "Valor deve ser maior que zero"),
     date: z.string().min(1, "Data é obrigatória"),
     category: z.string().min(1, "Categoria é obrigatória"),

@@ -3,6 +3,7 @@ import { IEntriesPresentationProps, EventType, PaymentMethod } from "./types";
 import Card from "../../../shared/components/Card";
 import Button from "../../../shared/components/Button";
 import Modal from "../../../shared/components/Modal";
+import DeleteModal from "../../../shared/components/DeleteModal";
 import EntryForm from "./components/EntryForm";
 import TableActions from "../../../shared/components/TableActions";
 
@@ -28,6 +29,10 @@ export default function EntriesPresentation({
   categories,
   events,
   getEventName,
+  isDeleteModalOpen,
+  onCloseDeleteModal,
+  onConfirmDelete,
+  isDeleting,
 }: IEntriesPresentationProps) {
   const totalEntries = entries.reduce((acc, entry) => acc + entry.value, 0);
 
@@ -150,9 +155,7 @@ export default function EntriesPresentation({
                 <th scope="col" className="px-6 py-3 text-right">
                   Valor
                 </th>
-                <th scope="col" className="px-6 py-3">
-                  Ações
-                </th>
+                <th scope="col" className="px-6 py-3"></th>
               </tr>
             </thead>
             <tbody>
@@ -219,6 +222,15 @@ export default function EntriesPresentation({
           events={events}
         />
       </Modal>
+
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={onCloseDeleteModal}
+        onConfirm={onConfirmDelete}
+        title="Excluir Entrada"
+        message="Tem certeza que deseja excluir esta entrada"
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }

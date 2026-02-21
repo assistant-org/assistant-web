@@ -3,6 +3,7 @@ import { IOutputsPresentationProps, OutputType, PaymentMethod } from "./types";
 import Card from "../../../shared/components/Card";
 import Button from "../../../shared/components/Button";
 import Modal from "../../../shared/components/Modal";
+import DeleteModal from "../../../shared/components/DeleteModal";
 import OutputForm from "./components/OutputForm";
 import TableActions from "../../../shared/components/TableActions";
 
@@ -28,6 +29,10 @@ export default function OutputsPresentation({
   isLoading,
   categories,
   events,
+  isDeleteModalOpen,
+  onCloseDeleteModal,
+  onConfirmDelete,
+  isDeleting,
 }: IOutputsPresentationProps) {
   const totalOutputs = outputs.reduce((acc, output) => acc + output.value, 0);
 
@@ -124,7 +129,7 @@ export default function OutputsPresentation({
                   Valor
                 </th>
                 <th scope="col" className="px-6 py-3">
-                  Ações
+                  {" "}
                 </th>
               </tr>
             </thead>
@@ -264,6 +269,15 @@ export default function OutputsPresentation({
           </div>
         </Modal>
       )}
+
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={onCloseDeleteModal}
+        onConfirm={onConfirmDelete}
+        title="Excluir Saída"
+        message="Tem certeza que deseja excluir esta saída"
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }

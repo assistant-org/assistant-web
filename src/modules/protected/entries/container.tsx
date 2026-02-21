@@ -38,6 +38,9 @@ export default function EntriesContainer() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [events, setEvents] = useState<any[]>([]);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { categories, loading: categoriesLoading } = useCategories();
   const { success, error: toastError } = useToast();
@@ -219,16 +222,32 @@ export default function EntriesContainer() {
     setIsLoading(false);
   };
 
-  const handleDeleteEntry = async (id: string) => {
-    if (window.confirm("Tem certeza que deseja excluir esta entrada?")) {
-      setError(null);
-      const result = await entriesService.delete(id);
-      if (result.error) {
-        toastError(result.error);
-      } else {
-        await loadEntries();
-        success("Entrada excluída com sucesso!");
-      }
+  const handleDeleteEntry = (id: string) => {
+    setEntryToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!entryToDelete) return;
+
+    setIsDeleting(true);
+    setError(null);
+    const result = await entriesService.delete(entryToDelete);
+    if (result.error) {
+      toastError(result.error);
+    } else {
+      await loadEntries();
+      success("Entrada excluída com sucesso!");
+    }
+    setIsDeleting(false);
+    setIsDeleteModalOpen(false);
+    setEntryToDelete(null);
+  };
+
+  const handleCloseDeleteModal = () => {
+    if (!isDeleting) {
+      setIsDeleteModalOpen(false);
+      setEntryToDelete(null);
     }
   };
 
@@ -249,6 +268,10 @@ export default function EntriesContainer() {
     categories: filteredCategories,
     events,
     getEventName,
+    isDeleteModalOpen,
+    onCloseDeleteModal: handleCloseDeleteModal,
+    onConfirmDelete: handleConfirmDelete,
+    isDeleting,
   };
 
   return <EntriesPresentation {...presentationProps} />;

@@ -50,6 +50,10 @@ export interface IOutputsPresentationProps {
   isLoading: boolean;
   categories: any[]; // Adicionar tipo correto depois
   events: any[]; // Adicionar tipo correto depois
+  isDeleteModalOpen: boolean;
+  onCloseDeleteModal: () => void;
+  onConfirmDelete: () => void;
+  isDeleting: boolean;
 }
 
 export interface IOutputFormProps {
