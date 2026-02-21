@@ -33,21 +33,28 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({
   const isAuthenticated = !!user;
 
   const login = useCallback((userData: IUser, token: string) => {
+    console.log(userData);
     setUser(userData);
     saveStorage("user", JSON.stringify(userData));
     saveStorage(config.API.TOKEN_NAME, token);
   }, []);
 
-  const logout = useCallback(async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
+  const clearSession = useCallback(() => {
     setUser(null);
     removeFromStorage("user");
     removeFromStorage(config.API.TOKEN_NAME);
   }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+      // clearSession will be called by the onAuthStateChange listener
+    } catch (error) {
+      console.error("Error signing out:", error);
+      // If signOut fails, still clear local session
+      clearSession();
+    }
+  }, [clearSession]);
 
   const getCurrentUser = useCallback(async (): Promise<IUser | null> => {
     try {
@@ -57,9 +64,13 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({
       if (supabaseUser) {
         return {
           name:
-            supabaseUser.user_metadata?.name || supabaseUser.email || "User",
+            (supabaseUser as any).display?.name ||
+            supabaseUser.user_metadata?.display?.name ||
+            supabaseUser.user_metadata?.name ||
+            supabaseUser.email?.split("@")[0] ||
+            "User",
           email: supabaseUser.email || "",
-          level: UserLevel.ADMIN, // Customize as needed
+          level: UserLevel.ADMIN,
         };
       }
       return null;
@@ -75,18 +86,22 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({
       if (event === "SIGNED_IN" && session?.user) {
         const userData: IUser = {
           name:
-            session.user.user_metadata?.name || session.user.email || "User",
+            (session.user as any).display?.name ||
+            session.user.user_metadata?.display?.name ||
+            session.user.user_metadata?.name ||
+            session.user.email?.split("@")[0] ||
+            "User",
           email: session.user.email || "",
-          level: UserLevel.ADMIN, // Can be customized
+          level: UserLevel.ADMIN,
         };
         login(userData, session.access_token);
       } else if (event === "SIGNED_OUT") {
-        logout();
+        clearSession();
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [login, logout]);
+  }, [login, clearSession]);
 
   return (
     <SessionContext.Provider

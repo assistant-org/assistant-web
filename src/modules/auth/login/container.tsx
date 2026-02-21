@@ -29,9 +29,13 @@ export default function LoginContainer() {
       if (authData.user) {
         const user: IUser = {
           name:
-            authData.user.user_metadata?.name || authData.user.email || "User",
+            (authData.user as any).display?.name ||
+            authData.user.user_metadata?.display?.name ||
+            authData.user.user_metadata?.name ||
+            authData.user.email?.split("@")[0] ||
+            "User",
           email: authData.user.email || "",
-          level: UserLevel.ADMIN, // Assuming admin for now, can be fetched from profile
+          level: UserLevel.ADMIN,
         };
         const token = authData.session?.access_token || "";
         login(user, token);

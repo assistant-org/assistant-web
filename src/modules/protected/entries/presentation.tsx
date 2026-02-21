@@ -1,16 +1,15 @@
-import React from "react";
-import { IEntriesPresentationProps, EventType, PaymentMethod } from "./types";
+import React, { useState } from "react";
+import { IEntriesPresentationProps } from "./types";
 import Card from "../../../shared/components/Card";
 import Button from "../../../shared/components/Button";
 import Modal from "../../../shared/components/Modal";
 import DeleteModal from "../../../shared/components/DeleteModal";
 import EntryForm from "./components/EntryForm";
 import TableActions from "../../../shared/components/TableActions";
-
-const inputBaseClasses =
-  "block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:border-indigo-500 focus:ring-indigo-500";
-const labelBaseClasses =
-  "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1";
+import BottomSheet from "../../../shared/components/BottomSheet";
+import FilterButton from "../../../shared/components/FilterButton";
+import EntriesFilterPanel from "./components/EntriesFilterPanel";
+import { useMediaQuery } from "../../../shared/hooks/useMediaQuery";
 
 export default function EntriesPresentation({
   entries,
@@ -35,6 +34,47 @@ export default function EntriesPresentation({
   isDeleting,
 }: IEntriesPresentationProps) {
   const totalEntries = entries.reduce((acc, entry) => acc + entry.value, 0);
+  const isMobile = useMediaQuery("(max-width: 700px)");
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  const [tempFilters, setTempFilters] = useState(filters);
+
+  const hasActiveFilters =
+    filters.startDate ||
+    filters.endDate ||
+    filters.category ||
+    filters.event ||
+    filters.eventType ||
+    filters.paymentMethod;
+
+  const handleTempFilterChange = (key: keyof typeof filters, value: string) => {
+    setTempFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    Object.entries(tempFilters).forEach(([key, value]) => {
+      onFilterChange(key as keyof typeof filters, value as string);
+    });
+    setIsFilterSheetOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    const clearedFilters = {
+      startDate: "",
+      endDate: "",
+      category: "",
+      event: "",
+      eventType: "",
+      paymentMethod: "",
+    };
+    setTempFilters(clearedFilters);
+    onClearFilters();
+    setIsFilterSheetOpen(false);
+  };
+
+  const openFilterSheet = () => {
+    setTempFilters(filters);
+    setIsFilterSheetOpen(true);
+  };
 
   return (
     <div>
@@ -42,98 +82,31 @@ export default function EntriesPresentation({
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
           Entradas
         </h1>
-        <Button onClick={() => onOpenModal()}>+ Nova Entrada</Button>
+        <div className="flex gap-2">
+          <Button onClick={() => onOpenModal()}>+ Nova Entrada</Button>
+        </div>
       </div>
 
-      <Card className="mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
-          <div className="lg:col-span-3">
-            <label className={labelBaseClasses}>Período</label>
-            <div className="flex items-center space-x-2">
-              <input
-                type="date"
-                value={filters.startDate}
-                onChange={(e) => onFilterChange("startDate", e.target.value)}
-                className={inputBaseClasses}
-              />
-              <span className="text-gray-500">até</span>
-              <input
-                type="date"
-                value={filters.endDate}
-                onChange={(e) => onFilterChange("endDate", e.target.value)}
-                className={inputBaseClasses}
-              />
-            </div>
-          </div>
-          <div className="lg:col-span-2">
-            <label htmlFor="filter-category" className={labelBaseClasses}>
-              Categoria
-            </label>
-            <select
-              id="filter-category"
-              value={filters.category}
-              onChange={(e) => onFilterChange("category", e.target.value)}
-              className={inputBaseClasses}
-            >
-              <option value="">Todas</option>
-              <option value="Venda de Chopp">Venda de Chopp</option>
-              <option value="Serviço de Bar">Serviço de Bar</option>
-              <option value="Aluguel de Equipamento">
-                Aluguel de Equipamento
-              </option>
-            </select>
-          </div>
-          <div className="lg:col-span-2">
-            <label htmlFor="filter-event" className={labelBaseClasses}>
-              Evento
-            </label>
-            <input
-              type="text"
-              id="filter-event"
-              placeholder="Buscar evento..."
-              value={filters.event}
-              onChange={(e) => onFilterChange("event", e.target.value)}
-              className={inputBaseClasses}
-            />
-          </div>
-          <div className="lg:col-span-2">
-            <label htmlFor="filter-eventType" className={labelBaseClasses}>
-              Tipo de Evento
-            </label>
-            <select
-              id="filter-eventType"
-              value={filters.eventType}
-              onChange={(e) => onFilterChange("eventType", e.target.value)}
-              className={inputBaseClasses}
-            >
-              <option value="">Todos</option>
-              <option value={EventType.CLOSED}>Fechado</option>
-              <option value={EventType.SINGLE}>Avulso</option>
-            </select>
-          </div>
-          <div className="lg:col-span-2">
-            <label htmlFor="filter-paymentMethod" className={labelBaseClasses}>
-              Forma de Pgto
-            </label>
-            <select
-              id="filter-paymentMethod"
-              value={filters.paymentMethod}
-              onChange={(e) => onFilterChange("paymentMethod", e.target.value)}
-              className={inputBaseClasses}
-            >
-              <option value="">Todas</option>
-              <option value={PaymentMethod.CASH}>Dinheiro</option>
-              <option value={PaymentMethod.PIX}>Pix</option>
-              <option value={PaymentMethod.CARD}>Cartão</option>
-            </select>
-          </div>
-          <div className="lg:col-span-1">
-            <Button onClick={onClearFilters} variant="secondary" fullWidth>
-              Limpar
-            </Button>
-          </div>
-        </div>
-      </Card>
+      {!isMobile && (
+        <Card className="mb-6">
+          <EntriesFilterPanel
+            filters={filters}
+            onFilterChange={onFilterChange}
+            onClearFilters={onClearFilters}
+            isMobile={false}
+            hasActiveFilters={hasActiveFilters}
+          />
+        </Card>
+      )}
+
+      <div className="py-3">
+        {isMobile && (
+          <FilterButton
+            onClick={openFilterSheet}
+            hasActiveFilters={hasActiveFilters}
+          />
+        )}
+      </div>
 
       <Card>
         <div className="overflow-x-auto">
@@ -231,6 +204,22 @@ export default function EntriesPresentation({
         message="Tem certeza que deseja excluir esta entrada"
         isDeleting={isDeleting}
       />
+
+      <BottomSheet
+        isOpen={isFilterSheetOpen}
+        onClose={() => setIsFilterSheetOpen(false)}
+        title="Filtros"
+      >
+        <EntriesFilterPanel
+          filters={tempFilters}
+          onFilterChange={handleTempFilterChange}
+          onClearFilters={
+            hasActiveFilters ? handleClearFilters : handleApplyFilters
+          }
+          isMobile={true}
+          hasActiveFilters={hasActiveFilters}
+        />
+      </BottomSheet>
     </div>
   );
 }

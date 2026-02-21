@@ -1,16 +1,15 @@
-import React from "react";
-import { IOutputsPresentationProps, OutputType, PaymentMethod } from "./types";
+import React, { useState } from "react";
+import { IOutputsPresentationProps } from "./types";
 import Card from "../../../shared/components/Card";
 import Button from "../../../shared/components/Button";
 import Modal from "../../../shared/components/Modal";
 import DeleteModal from "../../../shared/components/DeleteModal";
 import OutputForm from "./components/OutputForm";
 import TableActions from "../../../shared/components/TableActions";
-
-const inputBaseClasses =
-  "block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:border-indigo-500 focus:ring-indigo-500";
-const labelBaseClasses =
-  "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1";
+import BottomSheet from "../../../shared/components/BottomSheet";
+import FilterButton from "../../../shared/components/FilterButton";
+import OutputsFilterPanel from "./components/OutputsFilterPanel";
+import { useMediaQuery } from "../../../shared/hooks/useMediaQuery";
 
 export default function OutputsPresentation({
   outputs,
@@ -35,6 +34,43 @@ export default function OutputsPresentation({
   isDeleting,
 }: IOutputsPresentationProps) {
   const totalOutputs = outputs.reduce((acc, output) => acc + output.value, 0);
+  const isMobile = useMediaQuery("(max-width: 700px)");
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  const [tempFilters, setTempFilters] = useState(filters);
+
+  const hasActiveFilters =
+    filters.startDate ||
+    filters.endDate ||
+    filters.category ||
+    filters.paymentMethod;
+
+  const handleTempFilterChange = (key: keyof typeof filters, value: string) => {
+    setTempFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    Object.entries(tempFilters).forEach(([key, value]) => {
+      onFilterChange(key as keyof typeof filters, value as string);
+    });
+    setIsFilterSheetOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    const clearedFilters = {
+      startDate: "",
+      endDate: "",
+      category: "",
+      paymentMethod: "",
+    };
+    setTempFilters(clearedFilters);
+    onClearFilters();
+    setIsFilterSheetOpen(false);
+  };
+
+  const openFilterSheet = () => {
+    setTempFilters(filters);
+    setIsFilterSheetOpen(true);
+  };
 
   return (
     <div>
@@ -42,74 +78,32 @@ export default function OutputsPresentation({
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
           Saídas
         </h1>
-        <Button onClick={() => onOpenModal()}>+ Nova Saída</Button>
+        <div className="flex gap-2">
+          <Button onClick={() => onOpenModal()}>+ Nova Saída</Button>
+        </div>
       </div>
 
-      <Card className="mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
-          <div className="lg:col-span-3">
-            <label className={labelBaseClasses}>Período</label>
-            <div className="flex items-center space-x-2">
-              <input
-                type="date"
-                value={filters.startDate}
-                onChange={(e) => onFilterChange("startDate", e.target.value)}
-                className={inputBaseClasses}
-              />
-              <span className="text-gray-500">até</span>
-              <input
-                type="date"
-                value={filters.endDate}
-                onChange={(e) => onFilterChange("endDate", e.target.value)}
-                className={inputBaseClasses}
-              />
-            </div>
-          </div>
-          <div className="lg:col-span-3">
-            <label htmlFor="filter-category" className={labelBaseClasses}>
-              Categoria
-            </label>
-            <select
-              id="filter-category"
-              value={filters.category}
-              onChange={(e) => onFilterChange("category", e.target.value)}
-              className={inputBaseClasses}
-            >
-              <option value="">Todas</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.name}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="lg:col-span-2"></div>
-          <div className="lg:col-span-3">
-            <label htmlFor="filter-paymentMethod" className={labelBaseClasses}>
-              Forma de Pgto
-            </label>
-            <select
-              id="filter-paymentMethod"
-              value={filters.paymentMethod}
-              onChange={(e) => onFilterChange("paymentMethod", e.target.value)}
-              className={inputBaseClasses}
-            >
-              <option value="">Todas</option>
-              <option value={PaymentMethod.MONEY}>Dinheiro</option>
-              <option value={PaymentMethod.PIX}>Pix</option>
-              <option value={PaymentMethod.CREDIT_CARD}>
-                Cartão de Crédito
-              </option>
-              <option value={PaymentMethod.DEBIT_CARD}>Cartão de Débito</option>
-            </select>
-          </div>
-          <div className="lg:col-span-1">
-            <Button onClick={onClearFilters} variant="secondary" fullWidth>
-              Limpar
-            </Button>
-          </div>
-        </div>
-      </Card>
+      {!isMobile && (
+        <Card className="mb-6">
+          <OutputsFilterPanel
+            filters={filters}
+            onFilterChange={onFilterChange}
+            onClearFilters={onClearFilters}
+            isMobile={false}
+            hasActiveFilters={hasActiveFilters}
+            categories={categories}
+          />
+        </Card>
+      )}
+
+      <div className="py-3">
+        {isMobile && (
+          <FilterButton
+            onClick={openFilterSheet}
+            hasActiveFilters={hasActiveFilters}
+          />
+        )}
+      </div>
 
       <Card>
         <div className="overflow-x-auto">
@@ -278,6 +272,23 @@ export default function OutputsPresentation({
         message="Tem certeza que deseja excluir esta saída"
         isDeleting={isDeleting}
       />
+
+      <BottomSheet
+        isOpen={isFilterSheetOpen}
+        onClose={() => setIsFilterSheetOpen(false)}
+        title="Filtros"
+      >
+        <OutputsFilterPanel
+          filters={tempFilters}
+          onFilterChange={handleTempFilterChange}
+          onClearFilters={
+            hasActiveFilters ? handleClearFilters : handleApplyFilters
+          }
+          isMobile={true}
+          hasActiveFilters={hasActiveFilters}
+          categories={categories}
+        />
+      </BottomSheet>
     </div>
   );
 }

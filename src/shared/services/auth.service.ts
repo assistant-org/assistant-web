@@ -36,6 +36,29 @@ class AuthService {
     } = await supabase.auth.getSession();
     return session;
   }
+
+  async getUserProfile(
+    userId: string,
+  ): Promise<{ name?: string; email?: string } | null> {
+    try {
+      // Tenta buscar o perfil da tabela 'profiles' ou 'users'
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("name, email")
+        .eq("id", userId)
+        .single();
+
+      if (error) {
+        console.warn("Erro ao buscar perfil:", error);
+        return null;
+      }
+
+      return data;
+    } catch (err) {
+      console.warn("Erro ao buscar perfil do usuário:", err);
+      return null;
+    }
+  }
 }
 
 export default new AuthService();

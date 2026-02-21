@@ -134,7 +134,7 @@ export default function HomePresentation({
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
-        Olá, {userName}!
+        Olá, Na Estrada Chopp!
       </h1>
 
       {/* Metrics Grid */}
