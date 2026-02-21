@@ -48,6 +48,7 @@ export const SessionProvider: React.FC<{ children: ReactNode }> = ({
     removeFromStorage("user");
     removeFromStorage(config.API.TOKEN_NAME);
   }, []);
+
   const getCurrentUser = useCallback(async (): Promise<IUser | null> => {
     try {
       const {
