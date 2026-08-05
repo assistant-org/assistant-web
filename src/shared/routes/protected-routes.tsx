@@ -6,6 +6,7 @@ import CategoriesContainer from '../../modules/protected/categories/container';
 import FinancialContainer from '../../modules/protected/financial/container';
 import EventsContainer from '../../modules/protected/events/container';
 import StockContainer from '../../modules/protected/stock/container';
+import StockHistoryContainer from '../../modules/protected/stock-history/container';
 import ProductsContainer from '../../modules/protected/products/container';
 
 const ProtectedRoutes: React.FC = () => {
@@ -20,6 +21,7 @@ const ProtectedRoutes: React.FC = () => {
         <Route path="/events" element={<EventsContainer />} />
         <Route path="/products" element={<ProductsContainer />} />
         <Route path="/stock" element={<StockContainer />} />
+        <Route path="/stock/history" element={<StockHistoryContainer />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Route>
     </Routes>

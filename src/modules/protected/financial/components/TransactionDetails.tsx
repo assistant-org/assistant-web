@@ -1,14 +1,11 @@
 import React from "react";
-import { TransactionType } from "../../../../shared/services/transactions/types";
+import {
+  TransactionType,
+  PAYMENT_METHOD_LABELS,
+} from "../../../../shared/services/transactions/types";
+import { formatDateBR } from "../../../../shared/utils/formatDate";
 import { ITransactionDetailsProps } from "../types";
 import { TYPE_BADGE, VALUE_CLASSES, VALUE_SIGN, formatCurrency } from "./TransactionTable";
-
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  MONEY: "Dinheiro",
-  PIX: "Pix",
-  DEBIT_CARD: "Cartão de Débito",
-  CREDIT_CARD: "Cartão de Crédito",
-};
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({
   label,
@@ -42,7 +39,7 @@ const TransactionDetails: React.FC<ITransactionDetailsProps> = ({
         </span>
       </Field>
 
-      <Field label="Data">{new Date(transaction.date).toLocaleDateString("pt-BR")}</Field>
+      <Field label="Data">{formatDateBR(transaction.date)}</Field>
 
       {isTransfer ? (
         <>

@@ -1,5 +1,9 @@
 import { TransactionsService } from "../transactions/transactions.service";
-import { TransactionType } from "../transactions/types";
+import {
+  TransactionType,
+  PaymentMethod,
+  PAYMENT_METHOD_LABELS,
+} from "../transactions/types";
 import { EventsService } from "../events/events.service";
 import { CategoriesService } from "../categories/categories.service";
 import { productsService } from "../products/products.service";
@@ -22,6 +26,7 @@ import {
   getCycleRange,
   isDateInRange,
 } from "../../utils/periodRange";
+import { formatDateBR } from "../../utils/formatDate";
 
 const CHART_COLORS = [
   "#FF6384",
@@ -75,14 +80,17 @@ function getChangeLabel(current: number, previous: number): string | undefined {
 
 function formatRelativeDate(dateStr: string): string {
   try {
-    const date = new Date(dateStr);
+    const datePart = dateStr.slice(0, 10);
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(datePart)
+      ? new Date(`${datePart}T00:00:00`)
+      : new Date(dateStr);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     if (diffDays === 0) return "Hoje";
     if (diffDays === 1) return "1 dia atrás";
     if (diffDays < 7) return `${diffDays} dias atrás`;
-    return date.toLocaleDateString("pt-BR");
+    return formatDateBR(dateStr);
   } catch {
     return dateStr;
   }
@@ -263,7 +271,9 @@ export class DashboardService {
 
     const paymentCounts: Record<string, number> = {};
     currentIncomes.forEach((t) => {
-      const pm = t.paymentMethod || "Outros";
+      const pm = t.paymentMethod
+        ? PAYMENT_METHOD_LABELS[t.paymentMethod as PaymentMethod] || t.paymentMethod
+        : "Outros";
       paymentCounts[pm] = (paymentCounts[pm] || 0) + 1;
     });
     const topPayment = Object.entries(paymentCounts).sort((a, b) => b[1] - a[1])[0];

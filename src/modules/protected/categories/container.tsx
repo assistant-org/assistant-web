@@ -3,13 +3,23 @@ import { Resolver, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import CategoriesPresentation from "./presentation";
 import { categoryFormSchema, CategoryFormSchema } from "./schema";
-import { ICategoriesPresentationProps, ICategory } from "./types";
+import {
+  CATEGORY_TYPE_COLORS,
+  CategoryType,
+  ICategoriesPresentationProps,
+  ICategory,
+} from "./types";
 import { categoriesService } from "../../../shared/services/categories/categories.service";
 import { useToast } from "../../../shared/context/ToastContext";
 import { useServerList } from "../../../shared/hooks/useServerList";
 import { PaginatedResult } from "../../../shared/services/types";
 
 type CategoryListFilters = Record<string, never>;
+
+function colorForType(type?: CategoryType): string {
+  if (type === CategoryType.EXPENSE) return CATEGORY_TYPE_COLORS[CategoryType.EXPENSE];
+  return CATEGORY_TYPE_COLORS[CategoryType.INCOME];
+}
 
 export default function CategoriesContainer() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -49,19 +59,25 @@ export default function CategoriesContainer() {
   const formMethods = useForm<CategoryFormSchema>({
     resolver: zodResolver(categoryFormSchema) as Resolver<CategoryFormSchema>,
     defaultValues: {
-      color: "#000000",
+      type: CategoryType.INCOME,
+      color: CATEGORY_TYPE_COLORS[CategoryType.INCOME],
+      allowsSingleEvent: true,
     },
   });
 
   useEffect(() => {
     if (editingCategory) {
-      formMethods.reset(editingCategory);
+      formMethods.reset({
+        ...editingCategory,
+        allowsSingleEvent: true,
+        color: colorForType(editingCategory.type),
+      });
     } else {
       formMethods.reset({
         name: "",
-        type: undefined,
-        allowsSingleEvent: false,
-        color: "#000000",
+        type: CategoryType.INCOME,
+        allowsSingleEvent: true,
+        color: CATEGORY_TYPE_COLORS[CategoryType.INCOME],
         description: "",
       });
     }
@@ -79,9 +95,14 @@ export default function CategoriesContainer() {
 
   const handleSaveCategory = async (data: CategoryFormSchema) => {
     setIsSaving(true);
+    const payload: CategoryFormSchema = {
+      ...data,
+      allowsSingleEvent: true,
+      color: colorForType(data.type),
+    };
     try {
       if (editingCategory) {
-        const result = await categoriesService.update(editingCategory.id, data);
+        const result = await categoriesService.update(editingCategory.id, payload);
         if (result.error) {
           toastError(result.error);
         } else {
@@ -91,7 +112,7 @@ export default function CategoriesContainer() {
         }
       } else {
         const result = await categoriesService.create({
-          ...data,
+          ...payload,
           status: true,
         });
         if (result.error) {

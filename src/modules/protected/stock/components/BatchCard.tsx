@@ -1,6 +1,7 @@
 import React from "react";
-import { Eye } from "lucide-react";
+import { Eye, Pencil } from "lucide-react";
 import { StockBatch, StockBatchStatus } from "../../../../shared/services/stock/types";
+import { formatDateBR } from "../../../../shared/utils/formatDate";
 
 function formatCurrency(value: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -9,9 +10,10 @@ function formatCurrency(value: number): string {
 interface BatchCardProps {
   batches: StockBatch[];
   onViewDetails: (batch: StockBatch) => void;
+  onEdit: (batch: StockBatch) => void;
 }
 
-export default function BatchCard({ batches, onViewDetails }: BatchCardProps) {
+export default function BatchCard({ batches, onViewDetails, onEdit }: BatchCardProps) {
   if (batches.length === 0) {
     return (
       <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">
@@ -30,7 +32,7 @@ export default function BatchCard({ batches, onViewDetails }: BatchCardProps) {
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               {batch.expiryDate
-                ? `Val. ${new Date(batch.expiryDate).toLocaleDateString("pt-BR")}`
+                ? `Val. ${formatDateBR(batch.expiryDate)}`
                 : "Sem validade"}
             </p>
             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
@@ -54,14 +56,24 @@ export default function BatchCard({ batches, onViewDetails }: BatchCardProps) {
               </span>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => onViewDetails(batch)}
-            className="text-blue-600 hover:text-blue-800 dark:text-zinc-400 p-1"
-            title="Detalhes"
-          >
-            <Eye className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => onViewDetails(batch)}
+              className="text-blue-600 hover:text-blue-800 dark:text-zinc-400 p-1"
+              title="Detalhes"
+            >
+              <Eye className="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onEdit(batch)}
+              className="text-indigo-600 hover:text-indigo-800 dark:text-zinc-400 p-1"
+              title="Editar"
+            >
+              <Pencil className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       ))}
     </div>

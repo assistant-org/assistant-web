@@ -1,6 +1,7 @@
 import React from "react";
 import TableActions from "../../../../shared/components/TableActions";
 import { StockBatch, StockBatchStatus } from "../../../../shared/services/stock/types";
+import { formatDateBR } from "../../../../shared/utils/formatDate";
 
 function formatCurrency(value: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -9,9 +10,10 @@ function formatCurrency(value: number): string {
 interface BatchTableProps {
   batches: StockBatch[];
   onViewDetails: (batch: StockBatch) => void;
+  onEdit: (batch: StockBatch) => void;
 }
 
-export default function BatchTable({ batches, onViewDetails }: BatchTableProps) {
+export default function BatchTable({ batches, onViewDetails, onEdit }: BatchTableProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
@@ -42,9 +44,7 @@ export default function BatchTable({ batches, onViewDetails }: BatchTableProps) 
                   {batch.productName || batch.productId}
                 </td>
                 <td className="px-6 py-4">
-                  {batch.expiryDate
-                    ? new Date(batch.expiryDate).toLocaleDateString("pt-BR")
-                    : "-"}
+                  {formatDateBR(batch.expiryDate)}
                 </td>
                 <td className="px-6 py-4 text-right">
                   {batch.availableQuantity.toLocaleString("pt-BR", {
@@ -67,7 +67,10 @@ export default function BatchTable({ batches, onViewDetails }: BatchTableProps) 
                   </span>
                 </td>
                 <td className="px-6 py-4 text-center">
-                  <TableActions onViewDetails={() => onViewDetails(batch)} />
+                  <TableActions
+                    onViewDetails={() => onViewDetails(batch)}
+                    onEdit={() => onEdit(batch)}
+                  />
                 </td>
               </tr>
             ))

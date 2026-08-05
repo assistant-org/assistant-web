@@ -18,10 +18,12 @@ import {
 export type StockBatchListParams = StockBatchFilters & PaginationParams;
 
 export function mapMovementRow(data: Record<string, unknown>): StockMovement {
+  const products = data.products as { name?: string } | null | undefined;
   return {
     id: String(data.id),
     batchId: String(data.batch_id),
     productId: String(data.product_id),
+    productName: products?.name,
     type: data.type as StockMovementType,
     direction: data.direction as StockMovementDirection,
     quantity: Number(data.quantity) || 0,
@@ -30,6 +32,13 @@ export function mapMovementRow(data: Record<string, unknown>): StockMovement {
     reason: (data.reason as string) || null,
     origin: (data.origin as StockMovementOrigin) || StockMovementOrigin.MANUAL,
     originId: data.origin_id != null ? String(data.origin_id) : null,
+    eventId: data.event_id != null ? String(data.event_id) : null,
+    operationGroupId:
+      data.operation_group_id != null ? String(data.operation_group_id) : null,
+    reversesMovementId:
+      data.reverses_movement_id != null
+        ? String(data.reverses_movement_id)
+        : null,
     created_at: data.created_at as string | undefined,
     updated_at: data.updated_at as string | undefined,
   };
@@ -76,6 +85,7 @@ function mapBatchRow(
     initialQuantity: Number(data.initial_quantity) || 0,
     unitValue: Number(data.unit_value) || 0,
     observations: (data.observations as string) || null,
+    eventId: data.event_id != null ? String(data.event_id) : null,
     availableQuantity,
     status: statusFromView || deriveBatchStatus(availableQuantity),
     movements,
@@ -97,6 +107,9 @@ function applyBatchFilters(
   }
   if (filters?.expiryBefore) {
     query = query.lte("expiry_date", filters.expiryBefore);
+  }
+  if (filters?.eventId) {
+    query = query.eq("event_id", filters.eventId);
   }
   if (filters?.category) {
     query = query.eq("products.category", filters.category);
@@ -279,6 +292,55 @@ export class StockBatchesService {
 
       const movements = (data || []).map(mapMovementRow);
       return { data: deriveAvailableQuantity(movements), error: null };
+    } catch {
+      return { data: null, error: "Erro interno do servidor" };
+    }
+  }
+
+  async update(
+    id: string,
+    updates: import("./types").UpdateStockBatchRequest,
+  ): Promise<ApiResponse<StockBatch>> {
+    try {
+      const updateData: Record<string, unknown> = {
+        updated_at: new Date().toISOString(),
+      };
+      if (updates.expiryDate !== undefined)
+        updateData.expiry_date = updates.expiryDate || null;
+      if (updates.observations !== undefined)
+        updateData.observations = updates.observations || null;
+      if (updates.unitValue !== undefined)
+        updateData.unit_value = updates.unitValue;
+      if (updates.eventId !== undefined)
+        updateData.event_id = updates.eventId || null;
+
+      const { error } = await supabase
+        .from(this.tableName)
+        .update(updateData)
+        .eq("id", id);
+
+      if (error) {
+        return { data: null, error: error.message };
+      }
+
+      return this.findById(id);
+    } catch {
+      return { data: null, error: "Erro interno do servidor" };
+    }
+  }
+
+  async delete(id: string): Promise<ApiResponse<null>> {
+    try {
+      const { error } = await supabase
+        .from(this.tableName)
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        return { data: null, error: error.message };
+      }
+
+      return { data: null, error: null };
     } catch {
       return { data: null, error: "Erro interno do servidor" };
     }

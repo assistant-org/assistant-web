@@ -7,6 +7,7 @@ import {
   StockBatch,
   StockBatchStatus,
 } from "../../../../../shared/services/stock/types";
+import { formatDateBR } from "../../../../../shared/utils/formatDate";
 import { StockFormValues } from "../../schema";
 
 interface StepOutgoingDetailsProps {
@@ -24,6 +25,7 @@ export default function StepOutgoingDetails({
 }: StepOutgoingDetailsProps) {
   const {
     register,
+    control,
     watch,
     setValue,
     formState: { errors },
@@ -43,42 +45,49 @@ export default function StepOutgoingDetails({
     id: b.id,
     name: `Lote #${b.id} · ${b.availableQuantity.toLocaleString("pt-BR", {
       maximumFractionDigits: 2,
-    })} L${b.expiryDate ? ` · val. ${new Date(b.expiryDate).toLocaleDateString("pt-BR")}` : ""}`,
+    })} L${b.expiryDate ? ` · val. ${formatDateBR(b.expiryDate)}` : ""}`,
   }));
 
   return (
     <div className="grid grid-cols-1 gap-5">
       <Select
         id="productId"
+        name="productId"
+        control={control}
         label="Produto"
-        register={register("productId", {
-          onChange: () => setValue("batchId", null),
-        })}
         error={errors.productId?.message}
         disabled={isLoading}
         options={activeProducts}
         optionName="name"
         optionId="id"
+        onValueChange={() => setValue("batchId", null)}
       />
       <Select
         id="batchId"
+        name="batchId"
+        control={control}
         label="Lote"
-        register={register("batchId")}
         error={errors.batchId?.message}
         disabled={isLoading || !productId}
         options={batchOptions}
         optionName="name"
         optionId="id"
-        placeholder={!productId ? "Selecione um produto primeiro" : "Selecione um lote"}
       />
       <Input
         id="quantity"
         label="Quantidade (litros)"
-        type="number"
-        step="any"
-        register={register("quantity", { valueAsNumber: true })}
+        type="text"
+        inputMode="decimal"
+        register={register("quantity", {
+          setValueAs: (v) => {
+            if (v === "" || v == null) return NaN;
+            const n = Number(String(v).replace(",", "."));
+            return Number.isFinite(n) ? n : NaN;
+          },
+        })}
         error={errors.quantity?.message}
         disabled={isLoading}
+        placeholder="0"
       />
     </div>
   );

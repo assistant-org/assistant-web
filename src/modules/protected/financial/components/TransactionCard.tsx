@@ -1,6 +1,7 @@
 import React from "react";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { TransactionType, TransactionStatus } from "../../../../shared/services/transactions/types";
+import { formatDateBR } from "../../../../shared/utils/formatDate";
 import { ITransactionListProps } from "../types";
 import { TYPE_BADGE, VALUE_CLASSES, VALUE_SIGN, formatCurrency } from "./TransactionTable";
 
@@ -53,7 +54,7 @@ const TransactionCard: React.FC<ITransactionListProps> = ({
                   {description}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  {new Date(transaction.date).toLocaleDateString("pt-BR")}
+                  {formatDateBR(transaction.date)}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">

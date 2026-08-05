@@ -1,5 +1,9 @@
-import React from "react";
-import { ICategoryFormProps, CategoryType } from "../types";
+import React, { useEffect } from "react";
+import {
+  ICategoryFormProps,
+  CategoryType,
+  CATEGORY_TYPE_COLORS,
+} from "../types";
 import Input from "../../../../shared/components/Input";
 import Select from "../../../../shared/components/Select";
 import Button from "../../../../shared/components/Button";
@@ -13,8 +17,20 @@ export default function CategoryForm({
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
+    control,
     formState: { errors },
   } = formMethods;
+
+  const type = watch("type");
+
+  useEffect(() => {
+    if (type === CategoryType.INCOME || type === CategoryType.EXPENSE) {
+      setValue("color", CATEGORY_TYPE_COLORS[type]);
+      setValue("allowsSingleEvent", true);
+    }
+  }, [type, setValue]);
 
   return (
     <form onSubmit={handleSubmit(onSave)}>
@@ -31,48 +47,18 @@ export default function CategoryForm({
         </div>
         <Select
           id="type"
+          name="type"
+          control={control}
           label="Tipo"
-          register={register("type")}
           error={errors.type?.message}
           disabled={isLoading}
-        >
-          <option value="">Selecione...</option>
-          <option value={CategoryType.INCOME}>Receita</option>
-          <option value={CategoryType.EXPENSE}>Despesa</option>
-        </Select>
-        <div className="flex items-end">
-          <Input
-            id="color"
-            label="Cor (para gráficos)"
-            type="color"
-            register={register("color")}
-            error={errors.color?.message}
-            disabled={isLoading}
-            className="p-1 h-10 w-14 block bg-white border border-gray-300 cursor-pointer rounded-lg disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700"
-          />
-        </div>
-        <div className="md:col-span-2 flex items-start space-x-4">
-          <div className="flex h-6 items-center">
-            <input
-              id="allowsSingleEvent"
-              type="checkbox"
-              {...register("allowsSingleEvent")}
-              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-              disabled={isLoading}
-            />
-          </div>
-          <div className="text-sm">
-            <label
-              htmlFor="allowsSingleEvent"
-              className="font-medium text-gray-900 dark:text-gray-200"
-            >
-              Permite Evento Avulso?
-            </label>
-            <p className="text-gray-500 dark:text-gray-400">
-              Marque se esta categoria pode ser usada em eventos avulsos.
-            </p>
-          </div>
-        </div>
+          options={[
+            { id: CategoryType.INCOME, name: "Receita" },
+            { id: CategoryType.EXPENSE, name: "Despesa" },
+          ]}
+          optionName="name"
+          optionId="id"
+        />
         <div className="md:col-span-2">
           <label
             htmlFor="description"

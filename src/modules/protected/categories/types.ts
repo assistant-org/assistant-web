@@ -7,6 +7,16 @@ export enum CategoryType {
   EXPENSE = "EXPENSE",
 }
 
+export const CATEGORY_TYPE_LABELS: Record<CategoryType, string> = {
+  [CategoryType.INCOME]: "Receita",
+  [CategoryType.EXPENSE]: "Despesa",
+};
+
+export const CATEGORY_TYPE_COLORS: Record<CategoryType, string> = {
+  [CategoryType.INCOME]: "#3B82F6",
+  [CategoryType.EXPENSE]: "#EF4444",
+};
+
 export interface ICategory {
   id: string;
   name: string;

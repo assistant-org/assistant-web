@@ -215,10 +215,18 @@ const Sidebar = () => {
           </NavLink>
           <NavLink
             to="/stock"
+            end
             className={getNavLinkClass}
             onClick={closeSidebar}
           >
             <StockIcon /> Estoque
+          </NavLink>
+          <NavLink
+            to="/stock/history"
+            className={getNavLinkClass}
+            onClick={closeSidebar}
+          >
+            <StockIcon /> Histórico Estoque
           </NavLink>
         </nav>
 

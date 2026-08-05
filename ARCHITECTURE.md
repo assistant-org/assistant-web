@@ -202,7 +202,6 @@ Exemplos:
 * Compra
 * Pagamento
 * Recebimento
-* Compra de Chopp (despesa + entrada de estoque)
 
 Tipos operacionais:
 
@@ -339,7 +338,7 @@ Operação atual: **chopp em litros** (sem insumos/equipamentos na UX).
 
 ## Products
 
-Cadastro simplificado (Nome + Ativo). Persistência força `BEVERAGE` / `LITER` / `track_stock`.
+Cadastro: **Nome**, **Preço padrão por litro**, **Status (Ativo)**. Persistência força `BEVERAGE` / `LITER` / `track_stock`.
 
 ## Stock Batches
 
@@ -349,7 +348,8 @@ Cada **Entrada** cria um novo lote com:
 * data de entrada
 * validade (opcional)
 * quantidade inicial (litros)
-* valor unitário (R$/L)
+* valor unitário (R$/L) — pré-preenchido do preço padrão do produto, editável
+* evento da entrada (`event_id`, obrigatório na UI de ENTRY)
 * observações
 
 **Não** existem colunas de `available_quantity` ou `status` no banco.
@@ -367,10 +367,17 @@ Toda alteração de estoque gera uma movimentação. Nunca alterar saldo diretam
 
 Tipos na UI:
 
-* Entrada (`ENTRY`) — cria lote + movimento IN; wizard: produto + litros + R$/L → data + validade + descrição → resumo
-* Saída (`EXIT`) / Perda (`LOSS`) / Consumo Interno (`INTERNAL_CONSUMPTION`) — OUT; wizard: produto + lote + litros → data + descrição → resumo
+* Entrada (`ENTRY`) — cria lote + movimento IN; evento obrigatório; Individual ou Em lote
+* Saída (`EXIT`) — OUT; evento obrigatório; lote mostra evento + litros disponíveis
+* Perda (`LOSS`) / Consumo Interno (`INTERNAL_CONSUMPTION`) — OUT; evento opcional
 
-`ADJUSTMENT` permanece no schema/DB mas **não** é exposto na UI.
+`ADJUSTMENT` permanece no schema/DB (também usado internamente em reversões).
+
+Campos relevantes:
+
+* `event_id` — evento da operação
+* `operation_group_id` — agrupa linhas de um lançamento multi-item
+* `reverses_movement_id` — vínculo de auditoria quando a linha é reversão
 
 Toda movimentação registra:
 
@@ -382,26 +389,19 @@ Toda movimentação registra:
 * usuário responsável
 * motivo
 * origem (`manual` / `evento` / `transacao` / `ajuste`) + `origin_id`
+* evento / grupo / reversão (quando aplicável)
 
-## Relação com o Financeiro
+## Separação do Financeiro
 
-Integração ativa para **Compra de Chopp**:
-
-```
-Despesa categoria "Compra de Chopp"
-  → Transaction EXPENSE
-  → Stock Movement ENTRY (origin = transacao, origin_id = transaction.id)
-```
-
-Se a entrada de estoque falhar após criar a despesa, a transação é cancelada (soft-cancel) e o erro é exibido.
+Financeiro e estoque são **processos independentes**. Não há integração automática (ex.: despesa que cria lote). Compra financeira e entrada física podem ocorrer em datas diferentes.
 
 ## UX do módulo Estoque
 
-1. Listagem de lotes abre imediatamente (sem seletor de grupo)
-2. Cards-resumo mostram litros disponíveis por produto
-3. Listagem: produto, validade, litros disponíveis, valor = litros × R$/L, status
-4. Detalhes do lote com histórico de movimentações
-5. Wizard **Nova Movimentação** (mobile full-screen / desktop modal) com passos por tipo + resumo editável
+1. Listagem de lotes (cards mobile / tabela desktop) + paginação
+2. Cards-resumo de litros por produto
+3. Detalhes do lote com histórico; ação **Editar chopp** (resumo → campo → salvar/excluir)
+4. Wizard **Nova Movimentação**: tipo → Individual|Em lote + evento + itens → datas → resumo
+5. Tela **Histórico** (`/stock/history`) com filtros e ação **Reverter**
 
 ---
 
@@ -409,7 +409,7 @@ Se a entrada de estoque falhar após criar a despesa, a transação é cancelada
 
 Produtos operacionais são chopp controlado em litros.
 
-UI: apenas Nome + Ativo.
+UI: Nome + Preço padrão/L + Ativo.
 
 Campos fixos na persistência:
 
@@ -417,7 +417,7 @@ Campos fixos na persistência:
 * unidade `LITER`
 * `track_stock = true`
 
-Custo, preço e margem permanecem como evolução futura.
+Preço padrão pré-preenche o valor unitário nas entradas (editável antes de confirmar).
 
 ---
 

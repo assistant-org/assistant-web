@@ -17,6 +17,8 @@ export interface Product {
   unit: UnitOfMeasure;
   trackStock: boolean;
   minStock: number | null;
+  /** Default price per liter (R$/L). */
+  defaultUnitValue: number;
   active: boolean;
   created_at?: string;
   updated_at?: string;
@@ -30,6 +32,7 @@ export interface CreateProductRequest {
   unit?: UnitOfMeasure;
   trackStock?: boolean;
   minStock?: number | null;
+  defaultUnitValue?: number;
   active?: boolean;
 }
 
@@ -39,5 +42,6 @@ export interface UpdateProductRequest {
   unit?: UnitOfMeasure;
   trackStock?: boolean;
   minStock?: number | null;
+  defaultUnitValue?: number;
   active?: boolean;
 }

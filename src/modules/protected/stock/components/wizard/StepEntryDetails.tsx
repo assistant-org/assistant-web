@@ -37,8 +37,9 @@ export default function StepEntryDetails({
     <div className="grid grid-cols-1 gap-5">
       <Select
         id="productId"
+        name="productId"
+        control={control}
         label="Produto"
-        register={register("productId")}
         error={errors.productId?.message}
         disabled={isLoading}
         options={activeProducts}
@@ -48,11 +49,18 @@ export default function StepEntryDetails({
       <Input
         id="quantity"
         label="Quantidade (litros)"
-        type="number"
-        step="any"
-        register={register("quantity", { valueAsNumber: true })}
+        type="text"
+        inputMode="decimal"
+        register={register("quantity", {
+          setValueAs: (v) => {
+            if (v === "" || v == null) return NaN;
+            const n = Number(String(v).replace(",", "."));
+            return Number.isFinite(n) ? n : NaN;
+          },
+        })}
         error={errors.quantity?.message}
         disabled={isLoading}
+        placeholder="0"
       />
       <Controller
         name="unitValue"
@@ -60,8 +68,8 @@ export default function StepEntryDetails({
         render={({ field }) => (
           <MoneyInput
             id="unitValue"
-            label="Valor por litro"
-            value={field.value ?? 0}
+            label="Valor"
+            value={field.value}
             onChange={field.onChange}
             error={errors.unitValue?.message}
             disabled={isLoading}

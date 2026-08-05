@@ -3,10 +3,8 @@ import { StockFormValues } from "../../schema";
 
 export type StockStepKey =
   | "type"
-  | "entryDetails"
-  | "entryMeta"
-  | "outgoingDetails"
-  | "outgoingMeta"
+  | "operation"
+  | "meta"
   | "review";
 
 export interface StockStepDefinition {
@@ -21,26 +19,20 @@ const TYPE_STEP: StockStepDefinition = {
   fields: ["type"],
 };
 
-const ENTRY_DETAILS: StockStepDefinition = {
-  key: "entryDetails",
-  title: "Produto e quantidade",
-  fields: ["productId", "quantity", "unitValue"],
+const OPERATION_STEP: StockStepDefinition = {
+  key: "operation",
+  title: "Itens",
+  fields: ["eventId", "mode", "items"],
 };
 
-const ENTRY_META: StockStepDefinition = {
-  key: "entryMeta",
+const META_STEP_ENTRY: StockStepDefinition = {
+  key: "meta",
   title: "Datas e descrição",
   fields: ["entryDate", "expiryDate", "observations"],
 };
 
-const OUTGOING_DETAILS: StockStepDefinition = {
-  key: "outgoingDetails",
-  title: "Produto e lote",
-  fields: ["productId", "batchId", "quantity"],
-};
-
-const OUTGOING_META: StockStepDefinition = {
-  key: "outgoingMeta",
+const META_STEP_OUT: StockStepDefinition = {
+  key: "meta",
   title: "Data e descrição",
   fields: ["date", "reason"],
 };
@@ -53,7 +45,11 @@ export const STOCK_REVIEW_STEP: StockStepDefinition = {
 
 export function getStockStepsForType(type: StockMovementType): StockStepDefinition[] {
   if (type === StockMovementType.ENTRY) {
-    return [TYPE_STEP, ENTRY_DETAILS, ENTRY_META, STOCK_REVIEW_STEP];
+    return [TYPE_STEP, OPERATION_STEP, META_STEP_ENTRY, STOCK_REVIEW_STEP];
   }
-  return [TYPE_STEP, OUTGOING_DETAILS, OUTGOING_META, STOCK_REVIEW_STEP];
+  return [TYPE_STEP, OPERATION_STEP, META_STEP_OUT, STOCK_REVIEW_STEP];
+}
+
+export function requiresEvent(_type?: StockMovementType): boolean {
+  return true;
 }

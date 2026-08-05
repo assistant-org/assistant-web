@@ -1,28 +1,48 @@
-import { z } from "zod";
+﻿import { z } from "zod";
+import { requiredSelectString } from "../../utils/zodHelpers";
 import { PaymentMethod, TransactionType } from "./types";
+
+const emptyToNull = (val: unknown) =>
+  val === "" || val === undefined ? null : val;
 
 /**
  * Single validation schema for Receita/Despesa only.
  * Transfer was removed from the operational model.
+ *
+ * paymentMethod: required for EXPENSE, optional for INCOME.
  */
-export const transactionSchema = z.object({
-  type: z.enum([TransactionType.INCOME, TransactionType.EXPENSE]),
-  date: z.string().min(1, "Data é obrigatória"),
-  value: z
-    .number({ error: "Valor é obrigatório" })
-    .min(0.01, "Valor deve ser maior que zero"),
-  description: z.string().optional(),
-  paymentMethod: z.nativeEnum(PaymentMethod).optional().nullable(),
-  eventId: z.string().optional().nullable(),
-  categoryId: z.string().min(1, "Categoria é obrigatória"),
-  destinationAccountId: z.string().optional().nullable(),
-  sourceAccountId: z.string().optional().nullable(),
-  /** Populated only for Despesa "Compra de Chopp" stock-entry step. */
-  stockProductId: z.string().optional().nullable(),
-  stockQuantityLiters: z.number().optional().nullable(),
-  stockUnitValue: z.number().optional().nullable(),
-  stockExpiryDate: z.string().optional().nullable(),
-});
+export const transactionSchema = z
+  .object({
+    type: z.enum([TransactionType.INCOME, TransactionType.EXPENSE]),
+    date: z.string().min(1, "Data é obrigatória"),
+    value: z
+      .number({ error: "Valor é obrigatório" })
+      .min(0.01, "Valor deve ser maior que zero"),
+    description: z.string().optional(),
+    paymentMethod: z.preprocess(
+      emptyToNull,
+      z.nativeEnum(PaymentMethod).nullable().optional(),
+    ),
+    eventId: z.preprocess(emptyToNull, z.string().nullable().optional()),
+    categoryId: requiredSelectString("Categoria é obrigatória"),
+    destinationAccountId: z.preprocess(
+      emptyToNull,
+      z.string().nullable().optional(),
+    ),
+    sourceAccountId: z.preprocess(
+      emptyToNull,
+      z.string().nullable().optional(),
+    ),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === TransactionType.EXPENSE && !data.paymentMethod) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Forma de pagamento é obrigatória",
+        path: ["paymentMethod"],
+      });
+    }
+  });
 
 export type TransactionFormSchema = z.infer<typeof transactionSchema>;
 
