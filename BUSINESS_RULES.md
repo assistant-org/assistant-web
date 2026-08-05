@@ -126,6 +126,8 @@ Impacto:
 
 Reduz o patrimônio financeiro.
 
+Forma de pagamento é obrigatória.
+
 ---
 
 # Transfer (legado)
