@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Resolver, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { transactionFormSchema } from "./schema";
@@ -22,15 +22,8 @@ import { useCategories } from "../../../shared/hooks/useCategories";
 import { useToast } from "../../../shared/context/ToastContext";
 import { eventsService } from "../../../shared/services/events/events.service";
 import { isFeatureEnabled } from "../../../shared/config/features";
-import { productsService } from "../../../shared/services/products/products.service";
-import { Product } from "../../../shared/services/products/types";
-import { stockMovementsService } from "../../../shared/services/stock/stockMovements.service";
-import { StockMovementOrigin, StockMovementType } from "../../../shared/services/stock/types";
-import {
-  COMPRA_DE_CHOPP_CATEGORY_NAME,
-  isCompraDeChoppCategory,
-} from "./components/wizard/steps";
 import { useServerList } from "../../../shared/hooks/useServerList";
+import { todayISODate } from "../../../shared/utils/formatDate";
 
 const initialFilters: IFinancialFilters = {
   startDate: "",
@@ -42,8 +35,6 @@ const initialFilters: IFinancialFilters = {
   eventId: "",
   status: TransactionStatus.ACTIVE,
 };
-
-const today = () => new Date().toISOString().split("T")[0];
 
 function toServiceFilters(filters: IFinancialFilters) {
   return {
@@ -62,7 +53,6 @@ export default function FinancialContainer() {
   const eventsEnabled = isFeatureEnabled("events");
 
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [events, setEvents] = useState<IEventOption[]>([]);
   const [totals, setTotals] = useState<IFinancialTotals>({
     income: 0,
@@ -77,9 +67,8 @@ export default function FinancialContainer() {
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const { categories, loading: categoriesLoading, createCategory } = useCategories();
+  const { categories } = useCategories();
   const { success, error: toastError } = useToast();
-  const choppSeededRef = useRef(false);
 
   const fetchTransactions = useCallback(
     async (params: IFinancialFilters & { page: number; pageSize: number }) => {
@@ -118,11 +107,6 @@ export default function FinancialContainer() {
     if (result.data) setAccounts(result.data);
   }, []);
 
-  const loadProducts = useCallback(async () => {
-    const result = await productsService.findAll({ trackStockOnly: true });
-    if (result.data) setProducts(result.data.filter((p) => p.active));
-  }, []);
-
   const loadEvents = useCallback(async () => {
     if (!eventsEnabled) return;
     const result = await eventsService.findAll();
@@ -133,25 +117,8 @@ export default function FinancialContainer() {
 
   useEffect(() => {
     loadAccounts();
-    loadProducts();
     loadEvents();
-  }, [loadAccounts, loadProducts, loadEvents]);
-
-  useEffect(() => {
-    if (categoriesLoading || choppSeededRef.current) return;
-    const exists = categories.some((c) => c.name === COMPRA_DE_CHOPP_CATEGORY_NAME);
-    if (exists) {
-      choppSeededRef.current = true;
-      return;
-    }
-    choppSeededRef.current = true;
-    void createCategory({
-      name: COMPRA_DE_CHOPP_CATEGORY_NAME,
-      type: "EXPENSE",
-      status: true,
-      description: "Compra de chopp — gera entrada de estoque automaticamente",
-    });
-  }, [categories, categoriesLoading, createCategory]);
+  }, [loadAccounts, loadEvents]);
 
   const formMethods = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionFormSchema) as Resolver<TransactionFormValues>,
@@ -169,15 +136,11 @@ export default function FinancialContainer() {
         destinationAccountId: editingTransaction.destinationAccountId || null,
         paymentMethod: editingTransaction.paymentMethod || null,
         eventId: editingTransaction.eventId || null,
-        stockProductId: null,
-        stockQuantityLiters: null,
-        stockUnitValue: null,
-        stockExpiryDate: null,
       });
     } else {
       formMethods.reset({
         type: TransactionType.INCOME,
-        date: today(),
+        date: todayISODate(),
         value: undefined as unknown as number,
         description: "",
         categoryId: "",
@@ -185,10 +148,6 @@ export default function FinancialContainer() {
         destinationAccountId: null,
         paymentMethod: null,
         eventId: null,
-        stockProductId: null,
-        stockQuantityLiters: null,
-        stockUnitValue: null,
-        stockExpiryDate: null,
       });
     }
   }, [editingTransaction, isModalOpen, formMethods]);
@@ -251,14 +210,6 @@ export default function FinancialContainer() {
   const handleSaveTransaction = async (data: TransactionFormValues) => {
     setIsSaving(true);
     try {
-      const selectedCategory = categories.find(
-        (c) => String(c.id) === String(data.categoryId),
-      );
-      const isChoppPurchase =
-        data.type === TransactionType.EXPENSE &&
-        (isCompraDeChoppCategory(selectedCategory) ||
-          isCompraDeChoppCategory({ id: data.categoryId }));
-
       const payload = {
         type: data.type,
         date: data.date,
@@ -284,44 +235,11 @@ export default function FinancialContainer() {
         const result = await transactionsService.create(payload);
         if (result.error) {
           toastError(result.error);
-          setIsSaving(false);
-          return;
+        } else {
+          refreshList();
+          handleCloseModal();
+          success("Movimentação criada com sucesso!");
         }
-
-        const created = result.data;
-        if (isChoppPurchase && created?.id) {
-          const liters = data.stockQuantityLiters ?? 0;
-          const unitValue = data.stockUnitValue ?? 0;
-          const stockResult = await stockMovementsService.create({
-            type: StockMovementType.ENTRY,
-            productId: data.stockProductId!,
-            quantity: liters,
-            unitValue,
-            entryDate: data.date,
-            expiryDate: data.stockExpiryDate || null,
-            observations: data.description || null,
-            origin: StockMovementOrigin.TRANSACTION,
-            originId: created.id,
-          });
-
-          if (stockResult.error) {
-            await transactionsService.cancel(created.id);
-            toastError(
-              `Movimentação financeira cancelada: falha ao criar entrada de estoque (${stockResult.error})`,
-            );
-            refreshList();
-            setIsSaving(false);
-            return;
-          }
-        }
-
-        refreshList();
-        handleCloseModal();
-        success(
-          isChoppPurchase
-            ? "Despesa e entrada de estoque criadas com sucesso!"
-            : "Movimentação criada com sucesso!",
-        );
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro interno";
@@ -377,7 +295,6 @@ export default function FinancialContainer() {
     isLoading: list.loading || isSaving,
     categories,
     accounts,
-    products,
     events,
     eventsEnabled,
     isDeleteModalOpen,

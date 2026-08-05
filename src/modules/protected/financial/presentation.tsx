@@ -44,7 +44,6 @@ export default function FinancialPresentation({
   isLoading,
   categories,
   accounts,
-  products,
   events,
   eventsEnabled,
   isDeleteModalOpen,
@@ -277,10 +276,17 @@ export default function FinancialPresentation({
         isEditing={!!editingTransaction}
         formMethods={formMethods}
         onSave={onSave}
+        onDelete={
+          editingTransaction
+            ? () => {
+                onCloseModal();
+                onDeleteTransaction(editingTransaction.id);
+              }
+            : undefined
+        }
         isLoading={isLoading}
         categories={categories}
         accounts={accounts}
-        products={products}
         events={events}
         eventsEnabled={eventsEnabled}
       />

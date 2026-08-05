@@ -4,6 +4,7 @@ import {
   TransactionType,
   PAYMENT_METHOD_LABELS,
 } from "../../../../../shared/services/transactions/types";
+import { formatDateBR } from "../../../../../shared/utils/formatDate";
 import { StepDefinition, StepKey } from "./steps";
 import { TransactionFormValues } from "../../types";
 
@@ -15,12 +16,6 @@ const TYPE_LABELS: Record<string, string> = {
 function formatCurrency(value?: number | null): string {
   if (value === undefined || value === null || Number.isNaN(value)) return "-";
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-function formatDate(date?: string | null): string {
-  if (!date) return "-";
-  const parsed = new Date(date);
-  return Number.isNaN(parsed.getTime()) ? date : parsed.toLocaleDateString("pt-BR");
 }
 
 interface ReviewRow {
@@ -42,7 +37,6 @@ interface StepReviewProps {
   onEditStep: (key: StepKey) => void;
   resolveCategoryName: (id?: string | null) => string;
   resolveEventName: (id?: string | null) => string | null;
-  resolveProductName?: (id?: string | null) => string;
 }
 
 export default function StepReview({
@@ -53,7 +47,6 @@ export default function StepReview({
   onEditStep,
   resolveCategoryName,
   resolveEventName,
-  resolveProductName,
 }: StepReviewProps) {
   const groups: ReviewGroup[] = steps
     .map((step): ReviewGroup | null => {
@@ -66,31 +59,12 @@ export default function StepReview({
           };
         case "incomeExpenseDetails": {
           const rows: ReviewRow[] = [
-            { label: "Data", value: formatDate(values.date) },
+            { label: "Data", value: formatDateBR(values.date) },
             { label: "Valor", value: formatCurrency(values.value) },
             { label: "Categoria", value: resolveCategoryName(values.categoryId) },
           ];
           return { stepKey: step.key, title: "Dados da movimentação", rows };
         }
-        case "stockEntry":
-          return {
-            stepKey: step.key,
-            title: "Entrada de estoque",
-            rows: [
-              {
-                label: "Produto",
-                value: resolveProductName?.(values.stockProductId) || values.stockProductId || "-",
-              },
-              {
-                label: "Quantidade",
-                value: `${(values.stockQuantityLiters ?? 0).toLocaleString("pt-BR", {
-                  maximumFractionDigits: 2,
-                })} L`,
-              },
-              { label: "Valor por litro", value: formatCurrency(values.stockUnitValue) },
-              { label: "Validade", value: formatDate(values.stockExpiryDate) },
-            ],
-          };
         case "incomeExpenseExtras": {
           const rows: ReviewRow[] = [
             {

@@ -27,11 +27,6 @@ export interface TransactionFormValues {
   destinationAccountId?: string | null;
   paymentMethod?: PaymentMethod | null;
   eventId?: string | null;
-  /** Compra de Chopp → stock entry fields */
-  stockProductId?: string | null;
-  stockQuantityLiters?: number | null;
-  stockUnitValue?: number | null;
-  stockExpiryDate?: string | null;
 }
 
 export interface IFinancialFilters {
@@ -70,7 +65,6 @@ export interface IFinancialPresentationProps {
   isLoading: boolean;
   categories: Category[];
   accounts: Account[];
-  products: import("../../../shared/services/products/types").Product[];
   events: IEventOption[];
   eventsEnabled: boolean;
   isDeleteModalOpen: boolean;
@@ -96,12 +90,12 @@ export interface ITransactionWizardProps {
   isEditing: boolean;
   formMethods: UseFormReturn<TransactionFormValues>;
   onSave: (data: TransactionFormValues) => void;
+  onDelete?: () => void;
   isLoading: boolean;
   categories: Category[];
   accounts: Account[];
   events: IEventOption[];
   eventsEnabled: boolean;
-  products: import("../../../shared/services/products/types").Product[];
 }
 
 export interface ITransactionFiltersProps {
