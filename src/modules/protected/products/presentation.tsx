@@ -6,8 +6,10 @@ import TableActions from "../../../shared/components/TableActions";
 import Switch from "../../../shared/components/Switch";
 import DeleteModal from "../../../shared/components/DeleteModal";
 import ProductForm from "./components/ProductForm";
+import ProductCard from "./components/ProductCard";
 import FormShell from "../../../shared/components/FormShell";
 import PaginationControls from "../../../shared/components/PaginationControls";
+import { useMediaQuery } from "../../../shared/hooks/useMediaQuery";
 
 export default function ProductsPresentation({
   products,
@@ -32,6 +34,8 @@ export default function ProductsPresentation({
   onPageChange,
   onPageSizeChange,
 }: IProductsPresentationProps) {
+  const isMobile = useMediaQuery("(max-width: 700px)");
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -39,65 +43,74 @@ export default function ProductsPresentation({
         <Button onClick={() => onOpenModal()}>+ Novo Produto</Button>
       </div>
 
-      <Card>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-              <tr>
-                <th scope="col" className="px-6 py-3">
-                  Nome
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Status
-                </th>
-                <th scope="col" className="px-6 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.length === 0 ? (
+      <Card className={isMobile ? "!p-0 overflow-hidden" : ""}>
+        {isMobile ? (
+          <ProductCard
+            products={products}
+            onEdit={onOpenModal}
+            onDelete={onDelete}
+            onToggleActive={onToggleActive}
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+              <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                 <tr>
-                  <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
-                    Nenhum produto cadastrado.
-                  </td>
+                  <th scope="col" className="px-6 py-3">
+                    Nome
+                  </th>
+                  <th scope="col" className="px-6 py-3">
+                    Status
+                  </th>
+                  <th scope="col" className="px-6 py-3"></th>
                 </tr>
-              ) : (
-                products.map((product) => (
-                  <tr
-                    key={product.id}
-                    className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-                  >
-                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                      {product.name}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          product.active
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                            : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
-                        }`}
-                      >
-                        {product.active ? "Ativo" : "Inativo"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center space-x-4">
-                        <TableActions
-                          onEdit={() => onOpenModal(product)}
-                          onDelete={() => onDelete(product)}
-                        />
-                        <Switch
-                          checked={product.active}
-                          onChange={() => onToggleActive(product)}
-                        />
-                      </div>
+              </thead>
+              <tbody>
+                {products.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                      Nenhum produto cadastrado.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  products.map((product) => (
+                    <tr
+                      key={product.id}
+                      className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+                    >
+                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                        {product.name}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            product.active
+                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                              : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                          }`}
+                        >
+                          {product.active ? "Ativo" : "Inativo"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex items-center justify-center space-x-4">
+                          <TableActions
+                            onEdit={() => onOpenModal(product)}
+                            onDelete={() => onDelete(product)}
+                          />
+                          <Switch
+                            checked={product.active}
+                            onChange={() => onToggleActive(product)}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
 
       <PaginationControls
