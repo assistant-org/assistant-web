@@ -47,7 +47,7 @@ export class EventsService {
   }
 
   /**
-   * Busca todos os eventos
+   * Busca todos os eventos (dropdowns / dashboard). Prefer `findPage` for tables.
    */
   async findAll(): Promise<ApiResponse<EventsListResponse>> {
     try {
@@ -60,7 +60,6 @@ export class EventsService {
         return { data: null, error: error.message };
       }
 
-      // Map columns back
       const mappedData = data?.map(item => ({
         ...item,
         date: item['event-day'],
@@ -68,6 +67,58 @@ export class EventsService {
       })) || [];
 
       return { data: mappedData, error: null };
+    } catch (err) {
+      return { data: null, error: "Erro interno do servidor" };
+    }
+  }
+
+  async findPage(
+    params: { page?: number; pageSize?: number; type?: string } = {},
+  ): Promise<
+    ApiResponse<{
+      items: EventsListResponse;
+      total: number;
+      page: number;
+      pageSize: number;
+    }>
+  > {
+    try {
+      const page = Math.max(1, params.page ?? 1);
+      const pageSize = Math.max(1, params.pageSize ?? 10);
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      let query = supabase
+        .from(this.tableName)
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false });
+
+      if (params.type) {
+        query = query.eq("event-type", params.type);
+      }
+
+      const { data, error, count } = await query.range(from, to);
+
+      if (error) {
+        return { data: null, error: error.message };
+      }
+
+      const mappedData =
+        data?.map((item) => ({
+          ...item,
+          date: item["event-day"],
+          type: item["event-type"],
+        })) || [];
+
+      return {
+        data: {
+          items: mappedData,
+          total: count || 0,
+          page,
+          pageSize,
+        },
+        error: null,
+      };
     } catch (err) {
       return { data: null, error: "Erro interno do servidor" };
     }
