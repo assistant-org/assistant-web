@@ -1,5 +1,5 @@
 import React from "react";
-import { IEventsPresentationProps } from "./types";
+import { EVENT_TYPE_LABELS, IEventsPresentationProps } from "./types";
 import Card from "../../../shared/components/Card";
 import Button from "../../../shared/components/Button";
 import FormShell from "../../../shared/components/FormShell";
@@ -62,7 +62,9 @@ export default function EventsPresentation({
                   <td className="px-6 py-4">
                     {new Date(event.date).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 capitalize">{event.type}</td>
+                  <td className="px-6 py-4">
+                    {EVENT_TYPE_LABELS[event.type] ?? event.type}
+                  </td>
                   <td className="px-6 py-4 text-right font-medium text-green-500">
                     {(event.totalRevenue || 0).toLocaleString("pt-BR", {
                       style: "currency",

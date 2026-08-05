@@ -1,5 +1,5 @@
 import React from "react";
-import { ICategoriesPresentationProps } from "./types";
+import { CATEGORY_TYPE_LABELS, ICategoriesPresentationProps } from "./types";
 import Card from "../../../shared/components/Card";
 import Button from "../../../shared/components/Button";
 import FormShell from "../../../shared/components/FormShell";
@@ -80,7 +80,9 @@ export default function CategoriesPresentation({
                     )}
                     {category.name}
                   </td>
-                  <td className="px-6 py-4">{category.type}</td>
+                  <td className="px-6 py-4">
+                    {CATEGORY_TYPE_LABELS[category.type] ?? category.type}
+                  </td>
                   <td className="px-6 py-4">
                     <StatusBadge status={category.status} />
                   </td>

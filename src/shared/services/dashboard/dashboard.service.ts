@@ -1,5 +1,9 @@
 import { TransactionsService } from "../transactions/transactions.service";
-import { TransactionType } from "../transactions/types";
+import {
+  TransactionType,
+  PaymentMethod,
+  PAYMENT_METHOD_LABELS,
+} from "../transactions/types";
 import { EventsService } from "../events/events.service";
 import { CategoriesService } from "../categories/categories.service";
 import { productsService } from "../products/products.service";
@@ -263,7 +267,9 @@ export class DashboardService {
 
     const paymentCounts: Record<string, number> = {};
     currentIncomes.forEach((t) => {
-      const pm = t.paymentMethod || "Outros";
+      const pm = t.paymentMethod
+        ? PAYMENT_METHOD_LABELS[t.paymentMethod as PaymentMethod] || t.paymentMethod
+        : "Outros";
       paymentCounts[pm] = (paymentCounts[pm] || 0) + 1;
     });
     const topPayment = Object.entries(paymentCounts).sort((a, b) => b[1] - a[1])[0];

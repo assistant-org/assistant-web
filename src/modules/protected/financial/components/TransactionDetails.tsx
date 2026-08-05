@@ -1,14 +1,10 @@
 import React from "react";
-import { TransactionType } from "../../../../shared/services/transactions/types";
+import {
+  TransactionType,
+  PAYMENT_METHOD_LABELS,
+} from "../../../../shared/services/transactions/types";
 import { ITransactionDetailsProps } from "../types";
 import { TYPE_BADGE, VALUE_CLASSES, VALUE_SIGN, formatCurrency } from "./TransactionTable";
-
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  MONEY: "Dinheiro",
-  PIX: "Pix",
-  DEBIT_CARD: "Cartão de Débito",
-  CREDIT_CARD: "Cartão de Crédito",
-};
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({
   label,

@@ -7,6 +7,11 @@ export enum EventType {
   SINGLE = "OPEN_EVENTS",
 }
 
+export const EVENT_TYPE_LABELS: Record<EventType, string> = {
+  [EventType.CLOSED]: "Evento Fechado",
+  [EventType.SINGLE]: "Evento Avulso",
+};
+
 export interface IEvent {
   id: string;
   name: string;

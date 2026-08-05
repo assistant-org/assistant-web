@@ -1,6 +1,11 @@
 import React from "react";
 import TableActions from "../../../../shared/components/TableActions";
-import { TransactionType, TransactionStatus } from "../../../../shared/services/transactions/types";
+import {
+  TransactionType,
+  TransactionStatus,
+  PAYMENT_METHOD_LABELS,
+  PaymentMethod,
+} from "../../../../shared/services/transactions/types";
 import { ITransactionListProps } from "../types";
 
 const TYPE_BADGE: Record<TransactionType, { label: string; className: string }> = {
@@ -95,8 +100,11 @@ const TransactionTable: React.FC<ITransactionListProps> = ({
                   )}
                 </td>
                 <td className="px-6 py-4">{description}</td>
-                <td className="px-6 py-4 capitalize">
-                  {transaction.paymentMethod?.toLowerCase().replace("_", " ") || "-"}
+                <td className="px-6 py-4">
+                  {transaction.paymentMethod
+                    ? PAYMENT_METHOD_LABELS[transaction.paymentMethod as PaymentMethod] ||
+                      transaction.paymentMethod
+                    : "-"}
                 </td>
                 <td
                   className={`px-6 py-4 text-right font-medium ${VALUE_CLASSES[transaction.type]} ${

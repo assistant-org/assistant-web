@@ -23,6 +23,13 @@ export enum PaymentMethod {
   MONEY = "MONEY",
 }
 
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  [PaymentMethod.MONEY]: "Dinheiro",
+  [PaymentMethod.PIX]: "Pix",
+  [PaymentMethod.DEBIT_CARD]: "Cartão de Débito",
+  [PaymentMethod.CREDIT_CARD]: "Cartão de Crédito",
+};
+
 export interface Transaction {
   id: string;
   type: TransactionType;

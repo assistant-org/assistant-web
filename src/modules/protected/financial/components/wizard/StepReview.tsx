@@ -1,19 +1,15 @@
 import React from "react";
 import { Pencil } from "lucide-react";
-import { TransactionType } from "../../../../../shared/services/transactions/types";
+import {
+  TransactionType,
+  PAYMENT_METHOD_LABELS,
+} from "../../../../../shared/services/transactions/types";
 import { StepDefinition, StepKey } from "./steps";
 import { TransactionFormValues } from "../../types";
 
 const TYPE_LABELS: Record<string, string> = {
   [TransactionType.INCOME]: "Receita",
   [TransactionType.EXPENSE]: "Despesa",
-};
-
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  MONEY: "Dinheiro",
-  PIX: "Pix",
-  DEBIT_CARD: "Cartão de Débito",
-  CREDIT_CARD: "Cartão de Crédito",
 };
 
 function formatCurrency(value?: number | null): string {
