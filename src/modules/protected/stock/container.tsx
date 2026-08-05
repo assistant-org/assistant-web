@@ -1,195 +1,239 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { stockItemFormSchema, StockItemFormSchema, stockExitFormSchema, StockExitFormSchema } from './schema';
-import StockPresentation from './presentation';
-import { IStockPresentationProps, IStockItem, IStockFilters, StockCategory, StockStatus, ExitReason, IStockMovement } from './types';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Resolver, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import StockPresentation from "./presentation";
+import { stockFormSchema, StockFormValues } from "./schema";
+import { IProductSummary, IStockFilters, IStockPresentationProps } from "./types";
+import { productsService } from "../../../shared/services/products/products.service";
+import { Product } from "../../../shared/services/products/types";
+import { stockBatchesService } from "../../../shared/services/stock/stockBatches.service";
+import { stockMovementsService } from "../../../shared/services/stock/stockMovements.service";
+import {
+  StockBatch,
+  StockBatchStatus,
+  StockMovementType,
+} from "../../../shared/services/stock/types";
+import { useToast } from "../../../shared/context/ToastContext";
+import { useServerList } from "../../../shared/hooks/useServerList";
 
-export const mockStockItems: IStockItem[] = [
-    // FIX: Added unitPrice to mock data to align with the updated IStockItem interface.
-    { id: '1', productName: 'Barril Chopp Pilsen', category: StockCategory.PILSEN, entryDate: '2024-07-01', expiryDate: '2024-09-30', unitLiters: 50, unitCount: 10, unitPrice: 350, initialQuantityLiters: 500, availableQuantityLiters: 450, status: StockStatus.ACTIVE, movements: [{ id: 'm1', date: '2024-07-20', quantity: 50, reason: ExitReason.EVENT }] },
-    { id: '2', productName: 'Barril Chopp IPA', category: StockCategory.IPA, entryDate: '2024-07-05', expiryDate: '2024-08-20', unitLiters: 30, unitCount: 5, unitPrice: 450, initialQuantityLiters: 150, availableQuantityLiters: 150, status: StockStatus.ACTIVE, movements: [] },
-    { id: '3', productName: 'Barril Chopp Weiss', category: StockCategory.WEISS, entryDate: '2024-06-10', expiryDate: '2024-07-25', unitLiters: 30, unitCount: 2, unitPrice: 420, initialQuantityLiters: 60, availableQuantityLiters: 0, status: StockStatus.CLOSED, closureDate: '2024-07-22', movements: [] },
-    { id: '4', productName: 'Barril Chopp Lager', category: StockCategory.LAGER, entryDate: '2024-07-10', expiryDate: '2024-10-15', unitLiters: 50, unitCount: 8, unitPrice: 320, initialQuantityLiters: 400, availableQuantityLiters: 400, status: StockStatus.ACTIVE, movements: [] },
-];
+const today = () => new Date().toISOString().split("T")[0];
 
-const initialFilters: IStockFilters = { productName: '', category: '', status: '', expiryDate: '' };
+const initialFilters: IStockFilters = {
+  productId: "",
+  status: StockBatchStatus.ACTIVE,
+  expiryBefore: "",
+};
 
 export default function StockContainer() {
-  const [stockItems, setStockItems] = useState<IStockItem[]>(mockStockItems);
-  const [filters, setFilters] = useState<IStockFilters>(initialFilters);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<IStockItem | null>(null);
-  const [isSavingItem, setIsSavingItem] = useState(false);
-
+  const [products, setProducts] = useState<Product[]>([]);
+  const [allBatches, setAllBatches] = useState<StockBatch[]>([]);
+  const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
+  const [isSavingMovement, setIsSavingMovement] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedItemForDetails, setSelectedItemForDetails] = useState<IStockItem | null>(null);
+  const [selectedBatch, setSelectedBatch] = useState<StockBatch | null>(null);
 
-  const [isSavingExit, setIsSavingExit] = useState(false);
+  const { success, error: toastError } = useToast();
 
-  const itemFormMethods = useForm<StockItemFormSchema>({
-    resolver: zodResolver(stockItemFormSchema),
-  });
+  const fetchBatches = useCallback(
+    async (params: IStockFilters & { page: number; pageSize: number }) => {
+      const { page, pageSize, ...filters } = params;
+      return stockBatchesService.findPage({
+        productId: filters.productId || undefined,
+        status: filters.status,
+        expiryBefore: filters.expiryBefore || undefined,
+        page,
+        pageSize,
+      });
+    },
+    [],
+  );
 
-  const exitFormMethods = useForm<StockExitFormSchema>({
-      resolver: zodResolver(stockExitFormSchema),
+  const list = useServerList(fetchBatches, {
+    initialFilters,
+    initialPageSize: 10,
   });
 
   useEffect(() => {
-      if (editingItem) {
-        itemFormMethods.reset({
-            ...editingItem
-        });
+    if (list.error) toastError(list.error);
+  }, [list.error, toastError]);
+
+  const loadProducts = useCallback(async () => {
+    const result = await productsService.findAll({
+      includeInactive: false,
+      trackStockOnly: true,
+    });
+    if (result.error) {
+      toastError(result.error);
+    } else {
+      setProducts(result.data || []);
+    }
+  }, [toastError]);
+
+  const loadAllBatches = useCallback(async () => {
+    const result = await stockBatchesService.findAll();
+    if (result.error) {
+      toastError(result.error);
+    } else {
+      setAllBatches(result.data || []);
+    }
+  }, [toastError]);
+
+  useEffect(() => {
+    loadProducts();
+    loadAllBatches();
+  }, [loadProducts, loadAllBatches]);
+
+  const movementFormMethods = useForm<StockFormValues>({
+    resolver: zodResolver(stockFormSchema) as Resolver<StockFormValues>,
+    defaultValues: {
+      type: StockMovementType.ENTRY,
+      productId: "",
+      batchId: null,
+      quantity: undefined,
+      date: today(),
+      entryDate: today(),
+      unitValue: 0,
+      expiryDate: null,
+      observations: null,
+      reason: null,
+      direction: null,
+    },
+  });
+
+  useEffect(() => {
+    if (isMovementModalOpen) {
+      movementFormMethods.reset({
+        type: StockMovementType.ENTRY,
+        productId: "",
+        batchId: null,
+        quantity: undefined,
+        date: today(),
+        entryDate: today(),
+        unitValue: 0,
+        expiryDate: null,
+        observations: null,
+        reason: null,
+        direction: null,
+      });
+    }
+  }, [isMovementModalOpen, movementFormMethods]);
+
+  const summaries: IProductSummary[] = useMemo(() => {
+    const map = new Map<string, IProductSummary>();
+    for (const batch of allBatches) {
+      if (batch.status !== StockBatchStatus.ACTIVE) continue;
+      const existing = map.get(batch.productId);
+      if (existing) {
+        existing.totalAvailable += batch.availableQuantity;
       } else {
-        itemFormMethods.reset({
-            productName: '',
-            category: undefined,
-            entryDate: new Date().toISOString().split('T')[0],
-            expiryDate: '',
-            unitLiters: undefined,
-            unitCount: undefined,
-            // FIX: Added unitPrice to the form reset logic.
-            unitPrice: undefined,
-            observations: '',
+        map.set(batch.productId, {
+          productId: batch.productId,
+          productName: batch.productName || batch.productId,
+          totalAvailable: batch.availableQuantity,
         });
       }
-  }, [editingItem, isEditModalOpen, itemFormMethods]);
+    }
+    return Array.from(map.values()).sort((a, b) =>
+      a.productName.localeCompare(b.productName),
+    );
+  }, [allBatches]);
 
   const handleFilterChange = (field: keyof IStockFilters, value: string) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
+    list.setFilters((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleClearFilters = () => setFilters(initialFilters);
+  const handleClearFilters = () => list.setFilters(initialFilters);
 
-  const filteredStockItems = useMemo(() => {
-    return stockItems.filter(item => {
-        const nameMatch = filters.productName ? item.productName.toLowerCase().includes(filters.productName.toLowerCase()) : true;
-        const categoryMatch = filters.category ? item.category === filters.category : true;
-        const statusMatch = filters.status ? item.status === filters.status : true;
-        const expiryDateMatch = filters.expiryDate ? item.expiryDate <= filters.expiryDate : true;
-        return nameMatch && categoryMatch && statusMatch && expiryDateMatch;
-    });
-  }, [stockItems, filters]);
-
-  const handleOpenEditModal = (item?: IStockItem) => {
-    setEditingItem(item || null);
-    exitFormMethods.reset();
-    setIsEditModalOpen(true);
+  const refresh = () => {
+    list.reload();
+    void loadAllBatches();
   };
 
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
-    setEditingItem(null);
+  const handleOpenDetails = async (batch: StockBatch) => {
+    const result = await stockBatchesService.findById(batch.id);
+    if (result.error || !result.data) {
+      toastError(result.error || "Lote não encontrado");
+    } else {
+      setSelectedBatch(result.data);
+      setIsDetailsModalOpen(true);
+    }
   };
 
-  const handleOpenDetailsModal = (item: IStockItem) => {
-    setSelectedItemForDetails(item);
-    setIsDetailsModalOpen(true);
-  };
-
-  const handleCloseDetailsModal = () => {
-    setIsDetailsModalOpen(false);
-    setSelectedItemForDetails(null);
-  };
-
-  const handleSaveItem = (data: StockItemFormSchema) => {
-    setIsSavingItem(true);
-    setTimeout(() => {
-        if (editingItem) {
-            // Update existing item, but don't allow changing batch info
-            setStockItems(prev => prev.map(item => item.id === editingItem.id ? { 
-                ...item, 
-                productName: data.productName,
-                category: data.category,
-                entryDate: data.entryDate,
-                expiryDate: data.expiryDate,
-                // FIX: Added unitPrice to the item update logic.
-                unitPrice: data.unitPrice,
-                observations: data.observations,
-            } : item));
-        } else {
-            // Create new batch
-            const totalLiters = data.unitLiters * data.unitCount;
-            const newItem: IStockItem = { 
-                ...data, 
-                id: String(Date.now()), 
-                status: StockStatus.ACTIVE,
-                initialQuantityLiters: totalLiters,
-                availableQuantityLiters: totalLiters,
-                movements: [] 
-            };
-            setStockItems(prev => [newItem, ...prev]);
-        }
-        setIsSavingItem(false);
-        handleCloseEditModal();
-    }, 1000);
-  };
-  
-  const handleSaveExit = (data: StockExitFormSchema) => {
-      if (!editingItem) return;
-
-      if(data.quantity > editingItem.availableQuantityLiters) {
-          exitFormMethods.setError("quantity", { type: "manual", message: "Quantidade de saída maior que o disponível."});
-          return;
-      }
-
-      setIsSavingExit(true);
-      setTimeout(() => {
-        const newMovement: IStockMovement = {
-          id: String(Date.now()),
-          date: new Date().toISOString(),
-          quantity: data.quantity,
-          reason: data.reason,
-        };
-        
-        const updatedItems = stockItems.map(item => {
-          if (item.id === editingItem.id) {
-            const newAvailableQuantity = item.availableQuantityLiters - data.quantity;
-            const isNowClosed = newAvailableQuantity <= 0;
-
-            const updatedItem = {
-              ...item,
-              availableQuantityLiters: newAvailableQuantity,
-              status: isNowClosed ? StockStatus.CLOSED : item.status,
-              closureDate: isNowClosed ? new Date().toISOString() : item.closureDate,
-              movements: [...(item.movements || []), newMovement],
-            };
-            setEditingItem(updatedItem); // Refresh editing item state
-            return updatedItem;
-          }
-          return item;
+  const handleSaveMovement = async (data: StockFormValues) => {
+    setIsSavingMovement(true);
+    try {
+      if (data.type === StockMovementType.ENTRY) {
+        const result = await stockMovementsService.create({
+          type: StockMovementType.ENTRY,
+          productId: data.productId,
+          quantity: data.quantity!,
+          unitValue: data.unitValue ?? 0,
+          entryDate: data.entryDate || today(),
+          expiryDate: data.expiryDate || null,
+          observations: data.observations || data.reason || null,
+          reason: data.reason || null,
         });
-
-        setStockItems(updatedItems);
-        setIsSavingExit(false);
-        exitFormMethods.reset();
-        alert('Saída registrada com sucesso!');
-      }, 1000);
+        if (result.error) {
+          toastError(result.error);
+        } else {
+          refresh();
+          setIsMovementModalOpen(false);
+          success("Entrada registrada com sucesso!");
+        }
+      } else {
+        const result = await stockMovementsService.create({
+          type: data.type as
+            | StockMovementType.EXIT
+            | StockMovementType.LOSS
+            | StockMovementType.INTERNAL_CONSUMPTION,
+          productId: data.productId,
+          batchId: data.batchId!,
+          quantity: data.quantity!,
+          date: data.date || today(),
+          reason: data.reason || data.observations || null,
+        });
+        if (result.error) {
+          toastError(result.error);
+        } else {
+          refresh();
+          setIsMovementModalOpen(false);
+          success("Movimentação registrada com sucesso!");
+        }
+      }
+    } catch (err: unknown) {
+      toastError(err instanceof Error ? err.message : "Erro interno");
+    }
+    setIsSavingMovement(false);
   };
 
   const presentationProps: IStockPresentationProps = {
-    stockItems: filteredStockItems,
-    filters,
+    products,
+    batches: list.items,
+    allBatches,
+    summaries,
+    filters: list.filters,
     onFilterChange: handleFilterChange,
     onClearFilters: handleClearFilters,
-    
-    onOpenEditModal: handleOpenEditModal,
-    
+    onOpenMovementModal: () => setIsMovementModalOpen(true),
+    isMovementModalOpen,
+    onCloseMovementModal: () => setIsMovementModalOpen(false),
+    movementFormMethods,
+    onSaveMovement: handleSaveMovement,
+    isSavingMovement,
     isDetailsModalOpen,
-    onOpenDetailsModal: handleOpenDetailsModal,
-    onCloseDetailsModal: handleCloseDetailsModal,
-    selectedItemForDetails,
-    
-    isEditModalOpen,
-    onCloseEditModal: handleCloseEditModal,
-    editingItem,
-    itemFormMethods,
-    onSaveItem: handleSaveItem,
-    isSavingItem,
-
-    exitFormMethods,
-    onSaveExit: handleSaveExit,
-    isSavingExit,
+    selectedBatch,
+    onOpenDetails: handleOpenDetails,
+    onCloseDetails: () => {
+      setIsDetailsModalOpen(false);
+      setSelectedBatch(null);
+    },
+    isLoading: list.loading,
+    page: list.page,
+    pageSize: list.pageSize,
+    totalItems: list.total,
+    totalPages: list.totalPages,
+    onPageChange: list.setPage,
+    onPageSizeChange: list.setPageSize,
   };
 
   return <StockPresentation {...presentationProps} />;
