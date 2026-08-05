@@ -8,6 +8,7 @@ import {
   StockMovementDirection,
   StockMovementType,
 } from "../../../../shared/services/stock/types";
+import { formatDateBR } from "../../../../shared/utils/formatDate";
 
 const UNIT_SHORT: Record<string, string> = {
   [UnitOfMeasure.LITER]: "L",
@@ -41,9 +42,15 @@ const Field: React.FC<{ label: string; children: React.ReactNode }> = ({
 
 interface BatchDetailsProps {
   batch: StockBatch;
+  eventName?: string | null;
+  resolveEventName?: (id?: string | null) => string | null;
 }
 
-export default function BatchDetails({ batch }: BatchDetailsProps) {
+export default function BatchDetails({
+  batch,
+  eventName,
+  resolveEventName,
+}: BatchDetailsProps) {
   const unit = UNIT_SHORT[batch.productUnit || ""] || "";
   const consumed = Math.max(0, batch.initialQuantity - batch.availableQuantity);
   const movements = batch.movements || [];
@@ -55,13 +62,12 @@ export default function BatchDetails({ batch }: BatchDetailsProps) {
         <Field label="Status">
           {batch.status === StockBatchStatus.ACTIVE ? "Ativo" : "Encerrado"}
         </Field>
+        <Field label="Evento">{eventName || "-"}</Field>
         <Field label="Data de entrada">
-          {new Date(batch.entryDate).toLocaleDateString("pt-BR")}
+          {formatDateBR(batch.entryDate)}
         </Field>
         <Field label="Validade">
-          {batch.expiryDate
-            ? new Date(batch.expiryDate).toLocaleDateString("pt-BR")
-            : "-"}
+          {formatDateBR(batch.expiryDate)}
         </Field>
         <Field label="Quantidade inicial">
           {batch.initialQuantity.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} {unit}
@@ -97,6 +103,7 @@ export default function BatchDetails({ batch }: BatchDetailsProps) {
                   <th className="px-3 py-2">Data</th>
                   <th className="px-3 py-2">Tipo</th>
                   <th className="px-3 py-2 text-right">Qtd.</th>
+                  <th className="px-3 py-2">Evento</th>
                   <th className="px-3 py-2">Motivo</th>
                 </tr>
               </thead>
@@ -104,7 +111,7 @@ export default function BatchDetails({ batch }: BatchDetailsProps) {
                 {movements.map((m) => (
                   <tr key={m.id}>
                     <td className="px-3 py-2">
-                      {new Date(m.date).toLocaleDateString("pt-BR")}
+                      {formatDateBR(m.date)}
                     </td>
                     <td className="px-3 py-2">{TYPE_LABELS[m.type] || m.type}</td>
                     <td
@@ -116,6 +123,9 @@ export default function BatchDetails({ batch }: BatchDetailsProps) {
                     >
                       {m.direction === StockMovementDirection.IN ? "+" : "-"}
                       {m.quantity.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="px-3 py-2 text-gray-500">
+                      {resolveEventName?.(m.eventId) || m.eventId || "-"}
                     </td>
                     <td className="px-3 py-2 text-gray-500">{m.reason || "-"}</td>
                   </tr>
