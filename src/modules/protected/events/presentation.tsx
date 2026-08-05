@@ -2,9 +2,10 @@ import React from "react";
 import { IEventsPresentationProps } from "./types";
 import Card from "../../../shared/components/Card";
 import Button from "../../../shared/components/Button";
-import Modal from "../../../shared/components/Modal";
+import FormShell from "../../../shared/components/FormShell";
 import EventForm from "./components/EventForm";
 import TableActions from "../../../shared/components/TableActions";
+import PaginationControls from "../../../shared/components/PaginationControls";
 
 export default function EventsPresentation({
   events,
@@ -15,13 +16,17 @@ export default function EventsPresentation({
   formMethods,
   onSave,
   isLoading,
+  page,
+  pageSize,
+  totalItems,
+  totalPages,
+  onPageChange,
+  onPageSizeChange,
 }: IEventsPresentationProps) {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Eventos
-        </h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Eventos</h1>
         <Button onClick={() => onOpenModal()}>+ Novo Evento</Button>
       </div>
 
@@ -74,18 +79,30 @@ export default function EventsPresentation({
         </div>
       </Card>
 
-      <Modal
+      <PaginationControls
+        page={page}
+        pageSize={pageSize}
+        totalItems={totalItems}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+      />
+
+      <FormShell
         isOpen={isModalOpen}
         onClose={onCloseModal}
         title={editingEvent ? "Editar Evento" : "Novo Evento"}
+        requireConfirmClose
       >
-        <EventForm
-          formMethods={formMethods}
-          onSave={onSave}
-          onCancel={onCloseModal}
-          isLoading={isLoading}
-        />
-      </Modal>
+        {({ requestClose }) => (
+          <EventForm
+            formMethods={formMethods}
+            onSave={onSave}
+            onCancel={requestClose}
+            isLoading={isLoading}
+          />
+        )}
+      </FormShell>
     </div>
   );
 }

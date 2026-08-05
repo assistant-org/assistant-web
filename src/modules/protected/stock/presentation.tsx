@@ -1,126 +1,199 @@
-import React from 'react';
-import { IStockPresentationProps, StockCategory, StockStatus } from './types';
-import Card from '../../../shared/components/Card';
-import Button from '../../../shared/components/Button';
-import Modal from '../../../shared/components/Modal';
-import ManageStockItemForm from './components/ManageStockItemForm';
-import StockItemDetails from './components/StockItemDetails';
-
-const inputBaseClasses = "block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:border-indigo-500 focus:ring-indigo-500";
-const labelBaseClasses = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1";
-
-const StatusBadge: React.FC<{ status: StockStatus }> = ({ status }) => {
-    const baseClasses = 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full';
-    const statusClasses = {
-        [StockStatus.ACTIVE]: 'bg-green-100 text-green-800',
-        [StockStatus.CLOSED]: 'bg-red-100 text-red-800',
-    };
-    return (
-        <span className={`${baseClasses} ${statusClasses[status]}`}>
-            {status === StockStatus.ACTIVE ? 'Ativo' : 'Encerrado'}
-        </span>
-    );
-};
+import React, { useState } from "react";
+import Card from "../../../shared/components/Card";
+import Button from "../../../shared/components/Button";
+import BottomSheet from "../../../shared/components/BottomSheet";
+import FilterButton from "../../../shared/components/FilterButton";
+import FilterPopover from "../../../shared/components/filters/FilterPopover";
+import FilterBadges, { FilterBadgeChip } from "../../../shared/components/filters/FilterBadges";
+import FormShell from "../../../shared/components/FormShell";
+import PaginationControls from "../../../shared/components/PaginationControls";
+import { useMediaQuery } from "../../../shared/hooks/useMediaQuery";
+import { StockBatchStatus } from "../../../shared/services/stock/types";
+import { IStockFilters, IStockPresentationProps } from "./types";
+import StockSummaryCards from "./components/StockSummaryCards";
+import StockFilters, { STATUS_FILTER_OPTIONS } from "./components/StockFilters";
+import BatchTable from "./components/BatchTable";
+import BatchCard from "./components/BatchCard";
+import BatchDetails from "./components/BatchDetails";
+import StockMovementWizard from "./components/wizard/StockMovementWizard";
 
 export default function StockPresentation({
-    stockItems, filters, onFilterChange, onClearFilters, onOpenEditModal,
-    isDetailsModalOpen, onOpenDetailsModal, onCloseDetailsModal, selectedItemForDetails,
-    isEditModalOpen, onCloseEditModal, editingItem, itemFormMethods, onSaveItem, isSavingItem,
-    exitFormMethods, onSaveExit, isSavingExit
+  products,
+  batches,
+  allBatches,
+  summaries,
+  filters,
+  onFilterChange,
+  onClearFilters,
+  onOpenMovementModal,
+  isMovementModalOpen,
+  onCloseMovementModal,
+  movementFormMethods,
+  onSaveMovement,
+  isSavingMovement,
+  isDetailsModalOpen,
+  selectedBatch,
+  onOpenDetails,
+  onCloseDetails,
+  page,
+  pageSize,
+  totalItems,
+  totalPages,
+  onPageChange,
+  onPageSizeChange,
 }: IStockPresentationProps) {
-  
+  const isMobile = useMediaQuery("(max-width: 700px)");
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+  const [tempFilters, setTempFilters] = useState(filters);
+
+  const hasActiveFilters = Boolean(
+    filters.productId ||
+      filters.expiryBefore ||
+      (filters.status && filters.status !== StockBatchStatus.ACTIVE),
+  );
+
+  const handleTempFilterChange = (key: keyof IStockFilters, value: string) => {
+    setTempFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleApplyFilters = () => {
+    Object.entries(tempFilters).forEach(([key, value]) => {
+      onFilterChange(key as keyof IStockFilters, value as string);
+    });
+    setIsFilterSheetOpen(false);
+    setIsFilterPopoverOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    onClearFilters();
+    setTempFilters({
+      productId: "",
+      status: StockBatchStatus.ACTIVE,
+      expiryBefore: "",
+    });
+    setIsFilterSheetOpen(false);
+    setIsFilterPopoverOpen(false);
+  };
+
+  const filterChips: FilterBadgeChip[] = [];
+  if (filters.productId) {
+    const name = products.find((p) => p.id === filters.productId)?.name || filters.productId;
+    filterChips.push({
+      key: "product",
+      label: `Produto: ${name}`,
+      onRemove: () => onFilterChange("productId", ""),
+    });
+  }
+  if (filters.status && filters.status !== StockBatchStatus.ACTIVE) {
+    const label =
+      STATUS_FILTER_OPTIONS.find((o) => o.value === filters.status)?.label || filters.status;
+    filterChips.push({
+      key: "status",
+      label: `Status: ${label}`,
+      onRemove: () => onFilterChange("status", StockBatchStatus.ACTIVE),
+    });
+  }
+  if (filters.expiryBefore) {
+    filterChips.push({
+      key: "expiry",
+      label: `Validade até: ${filters.expiryBefore}`,
+      onRemove: () => onFilterChange("expiryBefore", ""),
+    });
+  }
+
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Estoque</h1>
-        <Button onClick={() => onOpenEditModal()}>+ Novo Item</Button>
+        <Button onClick={onOpenMovementModal}>+ Nova Movimentação</Button>
       </div>
 
-      <Card className="mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
-            <div className="lg:col-span-3">
-                <label htmlFor="filter-productName" className={labelBaseClasses}>Produto</label>
-                <input type="text" id="filter-productName" placeholder="Buscar produto..." value={filters.productName} onChange={(e) => onFilterChange('productName', e.target.value)} className={inputBaseClasses} />
-            </div>
-            <div className="lg:col-span-3">
-                <label htmlFor="filter-category" className={labelBaseClasses}>Categoria</label>
-                <select id="filter-category" value={filters.category} onChange={(e) => onFilterChange('category', e.target.value)} className={inputBaseClasses}>
-                    <option value="">Todas</option>
-                    {Object.values(StockCategory).map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                </select>
-            </div>
-            <div className="lg:col-span-2">
-                <label htmlFor="filter-status" className={labelBaseClasses}>Status</label>
-                <select id="filter-status" value={filters.status} onChange={(e) => onFilterChange('status', e.target.value)} className={inputBaseClasses}>
-                    <option value="">Todos</option>
-                    <option value={StockStatus.ACTIVE}>Ativo</option>
-                    <option value={StockStatus.CLOSED}>Encerrado</option>
-                </select>
-            </div>
-            <div className="lg:col-span-3">
-                 <label htmlFor="filter-expiryDate" className={labelBaseClasses}>Validade até</label>
-                <input type="date" id="filter-expiryDate" value={filters.expiryDate} onChange={(e) => onFilterChange('expiryDate', e.target.value)} className={inputBaseClasses} />
-            </div>
-            <div className="lg:col-span-1">
-                <Button onClick={onClearFilters} variant="secondary" fullWidth>Limpar</Button>
-            </div>
-        </div>
-      </Card>
-      
-      <Card>
-        <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                    <tr>
-                        <th scope="col" className="px-6 py-3">Produto</th>
-                        <th scope="col" className="px-6 py-3">Categoria</th>
-                        <th scope="col" className="px-6 py-3">Data Entrada</th>
-                        <th scope="col" className="px-6 py-3">Validade</th>
-                        <th scope="col" className="px-6 py-3 text-right">Unidades</th>
-                        <th scope="col" className="px-6 py-3 text-right">Qtd. Total (L)</th>
-                        <th scope="col" className="px-6 py-3 text-right">Qtd. Disp. (L)</th>
-                        <th scope="col" className="px-6 py-3">Status</th>
-                        <th scope="col" className="px-6 py-3 text-center">Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {stockItems.map(item => (
-                        <tr key={item.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
-                            <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{item.productName}</td>
-                            <td className="px-6 py-4">{item.category}</td>
-                            <td className="px-6 py-4">{new Date(item.entryDate).toLocaleDateString()}</td>
-                            <td className="px-6 py-4">{new Date(item.expiryDate).toLocaleDateString()}</td>
-                            <td className="px-6 py-4 text-right">{item.unitCount}</td>
-                            <td className="px-6 py-4 text-right">{item.initialQuantityLiters}</td>
-                            <td className="px-6 py-4 text-right font-bold">{item.availableQuantityLiters}</td>
-                            <td className="px-6 py-4"><StatusBadge status={item.status} /></td>
-                            <td className="px-6 py-4 text-center">
-                                <button onClick={() => onOpenDetailsModal(item)} className="font-medium text-blue-600 dark:text-blue-500 hover:underline mr-3">Detalhes</button>
-                                <button onClick={() => onOpenEditModal(item)} className="font-medium text-indigo-600 dark:text-indigo-500 hover:underline">Editar</button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
+      <StockSummaryCards summaries={summaries} />
+
+      <div className="flex justify-end mb-3">
+        {isMobile ? (
+          <FilterButton
+            onClick={() => {
+              setTempFilters(filters);
+              setIsFilterSheetOpen(true);
+            }}
+            hasActiveFilters={hasActiveFilters}
+          />
+        ) : (
+          <FilterPopover
+            isOpen={isFilterPopoverOpen}
+            onOpenChange={(open) => {
+              if (open) setTempFilters(filters);
+              setIsFilterPopoverOpen(open);
+            }}
+            hasActiveFilters={hasActiveFilters}
+          >
+            <StockFilters
+              filters={tempFilters}
+              onFilterChange={handleTempFilterChange}
+              onApply={handleApplyFilters}
+              onClearFilters={handleClearFilters}
+              products={products}
+              hasActiveFilters={hasActiveFilters}
+            />
+          </FilterPopover>
+        )}
+      </div>
+
+      <FilterBadges chips={filterChips} />
+
+      <Card className={isMobile ? "!p-0 overflow-hidden" : ""}>
+        {isMobile ? (
+          <BatchCard batches={batches} onViewDetails={onOpenDetails} />
+        ) : (
+          <BatchTable batches={batches} onViewDetails={onOpenDetails} />
+        )}
       </Card>
 
-      <Modal isOpen={isEditModalOpen} onClose={onCloseEditModal} title={editingItem ? 'Gerenciar Item de Estoque' : 'Novo Lote de Estoque'}>
-        <ManageStockItemForm 
-            itemFormMethods={itemFormMethods} 
-            onSaveItem={onSaveItem} 
-            onCancel={onCloseEditModal} 
-            isSavingItem={isSavingItem}
-            exitFormMethods={exitFormMethods}
-            onSaveExit={onSaveExit}
-            isSavingExit={isSavingExit}
-            currentItem={editingItem}
+      <PaginationControls
+        page={page}
+        pageSize={pageSize}
+        totalItems={totalItems}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+      />
+
+      <StockMovementWizard
+        isOpen={isMovementModalOpen}
+        onClose={onCloseMovementModal}
+        formMethods={movementFormMethods}
+        onSave={onSaveMovement}
+        isLoading={isSavingMovement}
+        products={products}
+        batches={allBatches}
+      />
+
+      {selectedBatch && (
+        <FormShell
+          isOpen={isDetailsModalOpen}
+          onClose={onCloseDetails}
+          title="Detalhes do Lote"
+        >
+          <BatchDetails batch={selectedBatch} />
+        </FormShell>
+      )}
+
+      <BottomSheet
+        isOpen={isFilterSheetOpen}
+        onClose={() => setIsFilterSheetOpen(false)}
+        title="Filtros"
+      >
+        <StockFilters
+          filters={tempFilters}
+          onFilterChange={handleTempFilterChange}
+          onApply={handleApplyFilters}
+          onClearFilters={handleClearFilters}
+          products={products}
+          hasActiveFilters={hasActiveFilters}
         />
-      </Modal>
-      
-      <Modal isOpen={isDetailsModalOpen} onClose={onCloseDetailsModal} title={`Detalhes - ${selectedItemForDetails?.productName || ''}`}>
-        <StockItemDetails item={selectedItemForDetails} />
-      </Modal>
+      </BottomSheet>
     </div>
   );
 }

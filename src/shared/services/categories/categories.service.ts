@@ -34,7 +34,7 @@ export class CategoriesService {
   }
 
   /**
-   * Busca todas as categorias
+   * Busca todas as categorias (dropdowns / hooks). Prefer `findPage` for tables.
    */
   async findAll(): Promise<ApiResponse<CategoriesListResponse>> {
     try {
@@ -51,6 +51,61 @@ export class CategoriesService {
     } catch (err) {
       return { data: null, error: "Erro interno do servidor" };
     }
+  }
+
+  /**
+   * Server-side paginated list.
+   */
+  async findPage(
+    params: { page?: number; pageSize?: number } = {},
+  ): Promise<
+    ApiResponse<{ items: CategoriesListResponse; total: number; page: number; pageSize: number }>
+  > {
+    try {
+      const page = Math.max(1, params.page ?? 1);
+      const pageSize = Math.max(1, params.pageSize ?? 10);
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data, error, count } = await supabase
+        .from(this.tableName)
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        return { data: null, error: error.message };
+      }
+
+      return {
+        data: {
+          items: data || [],
+          total: count || 0,
+          page,
+          pageSize,
+        },
+        error: null,
+      };
+    } catch (err) {
+      return { data: null, error: "Erro interno do servidor" };
+    }
+  }
+
+  /**
+   * @deprecated Use findPage — kept for compatibility.
+   */
+  async findPaginated(
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<ApiResponse<PaginatedCategoriesListResponse>> {
+    const result = await this.findPage({ page, pageSize: limit });
+    if (result.error || !result.data) {
+      return { data: null, error: result.error };
+    }
+    return {
+      data: { data: result.data.items, total: result.data.total },
+      error: null,
+    };
   }
 
   /**
@@ -156,33 +211,6 @@ export class CategoriesService {
       return { count, error: null };
     } catch (err) {
       return { count: null, error: "Erro interno do servidor" };
-    }
-  }
-
-  /**
-   * Busca categorias com paginação
-   */
-  async findPaginated(
-    page: number = 1,
-    limit: number = 10,
-  ): Promise<ApiResponse<PaginatedCategoriesListResponse>> {
-    try {
-      const from = (page - 1) * limit;
-      const to = from + limit - 1;
-
-      const { data, error, count } = await supabase
-        .from(this.tableName)
-        .select("*", { count: "exact" })
-        .order("created_at", { ascending: false })
-        .range(from, to);
-
-      if (error) {
-        return { data: null, error: error.message };
-      }
-
-      return { data: { data, total: count || 0 }, error: null };
-    } catch (err) {
-      return { data: null, error: "Erro interno do servidor" };
     }
   }
 }

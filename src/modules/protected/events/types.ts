@@ -1,5 +1,6 @@
 import { UseFormReturn } from "react-hook-form";
 import { EventFormSchema } from "./schema";
+import { PageSize } from "../../../shared/hooks/usePagination";
 
 export enum EventType {
   CLOSED = "CLOSED_EVENTS",
@@ -12,7 +13,7 @@ export interface IEvent {
   date: string;
   type: EventType;
   observations?: string;
-  totalRevenue?: number; // Calculated field
+  totalRevenue?: number;
 }
 
 export interface IEventsPresentationProps {
@@ -24,6 +25,12 @@ export interface IEventsPresentationProps {
   formMethods: UseFormReturn<EventFormSchema>;
   onSave: (data: EventFormSchema) => void;
   isLoading: boolean;
+  page: number;
+  pageSize: PageSize;
+  totalItems: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: PageSize) => void;
 }
 
 export interface IEventFormProps {

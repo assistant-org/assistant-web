@@ -1,16 +1,17 @@
 import { UseFormReturn } from "react-hook-form";
 import { CategoryFormSchema } from "./schema";
+import { PageSize } from "../../../shared/hooks/usePagination";
 
 export enum CategoryType {
-  ENTRY = "ENTRY",
-  OUTPUT = "OUTPUT",
+  INCOME = "INCOME",
+  EXPENSE = "EXPENSE",
 }
 
 export interface ICategory {
   id: string;
   name: string;
   type: CategoryType;
-  status: boolean; // true = active, false = inactive
+  status: boolean;
   allowsSingleEvent?: boolean;
   color?: string;
   description?: string;
@@ -26,6 +27,12 @@ export interface ICategoriesPresentationProps {
   formMethods: UseFormReturn<CategoryFormSchema>;
   onSave: (data: CategoryFormSchema) => void;
   isLoading: boolean;
+  page: number;
+  pageSize: PageSize;
+  totalItems: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: PageSize) => void;
 }
 
 export interface ICategoryFormProps {

@@ -4,7 +4,7 @@ export interface Category {
   description?: string;
   color?: string;
   icon?: string;
-  type: string; // 'Entrada' | 'Saída'
+  type: string; // 'INCOME' | 'EXPENSE'
   status: boolean; // true = active, false = inactive
   allowsSingleEvent?: boolean;
   created_at?: string;

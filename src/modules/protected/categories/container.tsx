@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Resolver, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import CategoriesPresentation from "./presentation";
@@ -6,17 +6,45 @@ import { categoryFormSchema, CategoryFormSchema } from "./schema";
 import { ICategoriesPresentationProps, ICategory } from "./types";
 import { categoriesService } from "../../../shared/services/categories/categories.service";
 import { useToast } from "../../../shared/context/ToastContext";
+import { useServerList } from "../../../shared/hooks/useServerList";
+import { PaginatedResult } from "../../../shared/services/types";
+
+type CategoryListFilters = Record<string, never>;
 
 export default function CategoriesContainer() {
-  const [categories, setCategories] = useState<ICategory[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<ICategory | null>(
-    null,
-  );
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const [editingCategory, setEditingCategory] = useState<ICategory | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const { success, error: toastError } = useToast();
+
+  const fetchCategories = useCallback(
+    async (params: CategoryListFilters & { page: number; pageSize: number }) => {
+      const result = await categoriesService.findPage({
+        page: params.page,
+        pageSize: params.pageSize,
+      });
+      if (result.error || !result.data) {
+        return { data: null, error: result.error };
+      }
+      return {
+        data: {
+          ...result.data,
+          items: result.data.items as ICategory[],
+        } as PaginatedResult<ICategory>,
+        error: null,
+      };
+    },
+    [],
+  );
+
+  const list = useServerList(fetchCategories, {
+    initialFilters: {},
+    initialPageSize: 10,
+  });
+
+  useEffect(() => {
+    if (list.error) toastError(list.error);
+  }, [list.error, toastError]);
 
   const formMethods = useForm<CategoryFormSchema>({
     resolver: zodResolver(categoryFormSchema) as Resolver<CategoryFormSchema>,
@@ -24,22 +52,6 @@ export default function CategoriesContainer() {
       color: "#000000",
     },
   });
-
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
-  const loadCategories = async () => {
-    setIsLoading(true);
-    setError(null);
-    const result = await categoriesService.findAll();
-    if (result.error) {
-      toastError(result.error);
-    } else {
-      setCategories(result.data || []);
-    }
-    setIsLoading(false);
-  };
 
   useEffect(() => {
     if (editingCategory) {
@@ -66,15 +78,14 @@ export default function CategoriesContainer() {
   };
 
   const handleSaveCategory = async (data: CategoryFormSchema) => {
-    setIsLoading(true);
-    setError(null);
+    setIsSaving(true);
     try {
       if (editingCategory) {
         const result = await categoriesService.update(editingCategory.id, data);
         if (result.error) {
           toastError(result.error);
         } else {
-          await loadCategories();
+          list.reload();
           handleCloseModal();
           success("Categoria atualizada com sucesso!");
         }
@@ -86,36 +97,33 @@ export default function CategoriesContainer() {
         if (result.error) {
           toastError(result.error);
         } else {
-          await loadCategories();
+          list.reload();
           handleCloseModal();
           success("Categoria criada com sucesso!");
         }
       }
-    } catch (err) {
-      setError("Erro interno do servidor");
+    } catch {
+      toastError("Erro interno do servidor");
     }
-    setIsLoading(false);
+    setIsSaving(false);
   };
 
   const handleToggleStatus = async (id: string) => {
-    const category = categories.find((c) => c.id === id);
+    const category = list.items.find((c) => c.id === id);
     if (!category) return;
-    setError(null);
     const result = await categoriesService.update(id, {
       status: !category.status,
     });
     if (result.error) {
       toastError(result.error);
     } else {
-      setCategories((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, status: !c.status } : c)),
-      );
+      list.reload();
       success("Status da categoria atualizado!");
     }
   };
 
   const presentationProps: ICategoriesPresentationProps = {
-    categories,
+    categories: list.items,
     onOpenModal: handleOpenModal,
     onToggleStatus: handleToggleStatus,
     isModalOpen,
@@ -123,7 +131,13 @@ export default function CategoriesContainer() {
     editingCategory,
     formMethods,
     onSave: handleSaveCategory,
-    isLoading,
+    isLoading: list.loading || isSaving,
+    page: list.page,
+    pageSize: list.pageSize,
+    totalItems: list.total,
+    totalPages: list.totalPages,
+    onPageChange: list.setPage,
+    onPageSizeChange: list.setPageSize,
   };
 
   return <CategoriesPresentation {...presentationProps} />;
