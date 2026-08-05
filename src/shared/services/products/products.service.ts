@@ -29,6 +29,7 @@ function mapProductRow(data: Record<string, unknown>): Product {
     unit: data.unit as UnitOfMeasure,
     trackStock: data.track_stock !== false,
     minStock: data.min_stock != null ? Number(data.min_stock) : null,
+    defaultUnitValue: Number(data.default_unit_value) || 0,
     active: data.active !== false,
     created_at: data.created_at as string | undefined,
     updated_at: data.updated_at as string | undefined,
@@ -71,6 +72,7 @@ export class ProductsService {
             unit: UnitOfMeasure.LITER,
             track_stock: true,
             min_stock: product.minStock ?? null,
+            default_unit_value: product.defaultUnitValue ?? 0,
             active: product.active ?? true,
           },
         ])
@@ -178,6 +180,8 @@ export class ProductsService {
       if (updates.unit !== undefined) updateData.unit = updates.unit;
       if (updates.trackStock !== undefined) updateData.track_stock = updates.trackStock;
       if (updates.minStock !== undefined) updateData.min_stock = updates.minStock;
+      if (updates.defaultUnitValue !== undefined)
+        updateData.default_unit_value = updates.defaultUnitValue;
       if (updates.active !== undefined) updateData.active = updates.active;
 
       const { data, error } = await supabase

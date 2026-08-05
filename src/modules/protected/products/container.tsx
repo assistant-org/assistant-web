@@ -43,6 +43,7 @@ export default function ProductsContainer() {
     resolver: zodResolver(productFormSchema),
     defaultValues: {
       name: "",
+      defaultUnitValue: 0,
       active: true,
     },
   });
@@ -51,11 +52,13 @@ export default function ProductsContainer() {
     if (editingProduct) {
       formMethods.reset({
         name: editingProduct.name,
+        defaultUnitValue: editingProduct.defaultUnitValue ?? 0,
         active: editingProduct.active,
       });
     } else {
       formMethods.reset({
         name: "",
+        defaultUnitValue: 0,
         active: true,
       });
     }
@@ -77,6 +80,7 @@ export default function ProductsContainer() {
       if (editingProduct) {
         const result = await productsService.update(editingProduct.id, {
           name: data.name,
+          defaultUnitValue: data.defaultUnitValue,
         });
         if (result.error) {
           toastError(result.error);
@@ -88,6 +92,7 @@ export default function ProductsContainer() {
       } else {
         const result = await productsService.create({
           name: data.name,
+          defaultUnitValue: data.defaultUnitValue,
           active: true,
         });
         if (result.error) {

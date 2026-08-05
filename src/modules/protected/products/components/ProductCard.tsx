@@ -32,6 +32,13 @@ export default function ProductCard({
             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
               {product.name}
             </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              {(product.defaultUnitValue ?? 0).toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+              })}
+              /L
+            </p>
             <span
               className={`mt-1.5 inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
                 product.active

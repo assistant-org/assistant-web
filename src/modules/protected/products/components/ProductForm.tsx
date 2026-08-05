@@ -1,6 +1,8 @@
 import React from "react";
+import { Controller } from "react-hook-form";
 import { IProductFormProps } from "../types";
 import Input from "../../../../shared/components/Input";
+import MoneyInput from "../../../../shared/components/MoneyInput";
 import Button from "../../../../shared/components/Button";
 import { ClipLoader } from "react-spinners";
 
@@ -12,6 +14,7 @@ export default function ProductForm({
 }: IProductFormProps) {
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = formMethods;
@@ -28,6 +31,23 @@ export default function ProductForm({
           disabled={isLoading}
           placeholder="Ex: Chopp Pilsen"
         />
+        <Controller
+          name="defaultUnitValue"
+          control={control}
+          render={({ field }) => (
+            <MoneyInput
+              id="defaultUnitValue"
+              label="Valor"
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.defaultUnitValue?.message}
+              disabled={isLoading}
+            />
+          )}
+        />
+        <p className="-mt-4 text-xs text-gray-500 dark:text-gray-400">
+          Preço padrão por litro (R$/L)
+        </p>
       </div>
 
       <div className="mt-8 pt-5">

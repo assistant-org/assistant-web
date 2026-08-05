@@ -60,6 +60,9 @@ export default function ProductsPresentation({
                     Nome
                   </th>
                   <th scope="col" className="px-6 py-3">
+                    Preço/L
+                  </th>
+                  <th scope="col" className="px-6 py-3">
                     Status
                   </th>
                   <th scope="col" className="px-6 py-3"></th>
@@ -68,7 +71,7 @@ export default function ProductsPresentation({
               <tbody>
                 {products.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
                       Nenhum produto cadastrado.
                     </td>
                   </tr>
@@ -78,20 +81,27 @@ export default function ProductsPresentation({
                       key={product.id}
                       className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
                     >
-                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                        {product.name}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            product.active
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                              : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
-                          }`}
-                        >
-                          {product.active ? "Ativo" : "Inativo"}
-                        </span>
-                      </td>
+                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                      {product.name}
+                    </td>
+                    <td className="px-6 py-4">
+                      {(product.defaultUnitValue ?? 0).toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })}
+                      /L
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          product.active
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                            : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                        }`}
+                      >
+                        {product.active ? "Ativo" : "Inativo"}
+                      </span>
+                    </td>
                       <td className="px-6 py-4 text-center">
                         <div className="flex items-center justify-center space-x-4">
                           <TableActions
