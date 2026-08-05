@@ -1,4 +1,5 @@
-import { z } from "zod";
+﻿import { z } from "zod";
+import { requiredSelectString } from "../../utils/zodHelpers";
 import { PaymentMethod, TransactionType } from "./types";
 
 const emptyToNull = (val: unknown) =>
@@ -23,23 +24,12 @@ export const transactionSchema = z
       z.nativeEnum(PaymentMethod).nullable().optional(),
     ),
     eventId: z.preprocess(emptyToNull, z.string().nullable().optional()),
-    categoryId: z.string().min(1, "Categoria é obrigatória"),
+    categoryId: requiredSelectString("Categoria é obrigatória"),
     destinationAccountId: z.preprocess(
       emptyToNull,
       z.string().nullable().optional(),
     ),
     sourceAccountId: z.preprocess(
-      emptyToNull,
-      z.string().nullable().optional(),
-    ),
-    /** Populated only for Despesa "Compra de Chopp" stock-entry step. */
-    stockProductId: z.preprocess(
-      emptyToNull,
-      z.string().nullable().optional(),
-    ),
-    stockQuantityLiters: z.number().optional().nullable(),
-    stockUnitValue: z.number().optional().nullable(),
-    stockExpiryDate: z.preprocess(
       emptyToNull,
       z.string().nullable().optional(),
     ),

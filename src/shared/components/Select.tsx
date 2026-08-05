@@ -38,7 +38,7 @@ function SelectInner({
   label: string;
   id: string;
   value: string | null | undefined;
-  onChange: (value: string | null) => void;
+  onChange: (value: string) => void;
   onBlur: () => void;
   options: Record<string, any>[];
   optionName: string;
@@ -83,9 +83,10 @@ function SelectInner({
     };
   }, [open, onBlur]);
 
-  const commit = (next: string | null) => {
+  // Clear commits "" (not null) so Zod z.string().min(1) shows required messages.
+  const commit = (next: string) => {
     onChange(next);
-    onValueChange?.(next);
+    onValueChange?.(next === "" ? null : next);
   };
 
   const borderClass = error
@@ -150,7 +151,7 @@ function SelectInner({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              commit(null);
+              commit("");
               setOpen(false);
             }}
             aria-label="Limpar seleção"
