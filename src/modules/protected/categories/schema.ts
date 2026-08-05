@@ -3,7 +3,7 @@ import { CategoryType } from "./types";
 
 export const categoryFormSchema = z.object({
   name: z.string().min(1, "O nome da categoria é obrigatório."),
-  type: z.nativeEnum(CategoryType).default(CategoryType.ENTRY),
+  type: z.nativeEnum(CategoryType).default(CategoryType.INCOME),
   allowsSingleEvent: z.boolean().optional(),
   color: z
     .string()

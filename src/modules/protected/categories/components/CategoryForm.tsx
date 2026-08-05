@@ -37,8 +37,8 @@ export default function CategoryForm({
           disabled={isLoading}
         >
           <option value="">Selecione...</option>
-          <option value={CategoryType.ENTRY}>Entrada</option>
-          <option value={CategoryType.OUTPUT}>Saída</option>
+          <option value={CategoryType.INCOME}>Receita</option>
+          <option value={CategoryType.EXPENSE}>Despesa</option>
         </Select>
         <div className="flex items-end">
           <Input

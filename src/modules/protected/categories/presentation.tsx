@@ -2,10 +2,11 @@ import React from "react";
 import { ICategoriesPresentationProps } from "./types";
 import Card from "../../../shared/components/Card";
 import Button from "../../../shared/components/Button";
-import Modal from "../../../shared/components/Modal";
+import FormShell from "../../../shared/components/FormShell";
 import CategoryForm from "./components/CategoryForm";
 import Switch from "../../../shared/components/Switch";
 import TableActions from "../../../shared/components/TableActions";
+import PaginationControls from "../../../shared/components/PaginationControls";
 
 const StatusBadge: React.FC<{ status: boolean }> = ({ status }) => {
   const baseClasses =
@@ -33,13 +34,17 @@ export default function CategoriesPresentation({
   formMethods,
   onSave,
   isLoading,
+  page,
+  pageSize,
+  totalItems,
+  totalPages,
+  onPageChange,
+  onPageSizeChange,
 }: ICategoriesPresentationProps) {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Categorias
-        </h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Categorias</h1>
         <Button onClick={() => onOpenModal()}>+ Nova Categoria</Button>
       </div>
 
@@ -95,18 +100,30 @@ export default function CategoriesPresentation({
         </div>
       </Card>
 
-      <Modal
+      <PaginationControls
+        page={page}
+        pageSize={pageSize}
+        totalItems={totalItems}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+      />
+
+      <FormShell
         isOpen={isModalOpen}
         onClose={onCloseModal}
         title={editingCategory ? "Editar Categoria" : "Nova Categoria"}
+        requireConfirmClose
       >
-        <CategoryForm
-          formMethods={formMethods}
-          onSave={onSave}
-          onCancel={onCloseModal}
-          isLoading={isLoading}
-        />
-      </Modal>
+        {({ requestClose }) => (
+          <CategoryForm
+            formMethods={formMethods}
+            onSave={onSave}
+            onCancel={requestClose}
+            isLoading={isLoading}
+          />
+        )}
+      </FormShell>
     </div>
   );
 }
