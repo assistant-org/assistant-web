@@ -37,8 +37,9 @@ export default function StepEntryDetails({
     <div className="grid grid-cols-1 gap-5">
       <Select
         id="productId"
+        name="productId"
+        control={control}
         label="Produto"
-        register={register("productId")}
         error={errors.productId?.message}
         disabled={isLoading}
         options={activeProducts}

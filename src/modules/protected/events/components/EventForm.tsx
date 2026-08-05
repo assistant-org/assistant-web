@@ -14,6 +14,7 @@ export default function EventForm({
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = formMethods;
 
@@ -40,8 +41,9 @@ export default function EventForm({
         />
         <Select
           id="type"
+          name="type"
+          control={control}
           label="Tipo de Evento"
-          register={register("type")}
           error={errors.type?.message}
           disabled={isLoading}
           options={[

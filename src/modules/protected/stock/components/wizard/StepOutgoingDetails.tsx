@@ -24,6 +24,7 @@ export default function StepOutgoingDetails({
 }: StepOutgoingDetailsProps) {
   const {
     register,
+    control,
     watch,
     setValue,
     formState: { errors },
@@ -50,26 +51,26 @@ export default function StepOutgoingDetails({
     <div className="grid grid-cols-1 gap-5">
       <Select
         id="productId"
+        name="productId"
+        control={control}
         label="Produto"
-        register={register("productId", {
-          onChange: () => setValue("batchId", null),
-        })}
         error={errors.productId?.message}
         disabled={isLoading}
         options={activeProducts}
         optionName="name"
         optionId="id"
+        onValueChange={() => setValue("batchId", null)}
       />
       <Select
         id="batchId"
+        name="batchId"
+        control={control}
         label="Lote"
-        register={register("batchId")}
         error={errors.batchId?.message}
         disabled={isLoading || !productId}
         options={batchOptions}
         optionName="name"
         optionId="id"
-        placeholder={!productId ? "Selecione um produto primeiro" : "Selecione um lote"}
       />
       <Input
         id="quantity"

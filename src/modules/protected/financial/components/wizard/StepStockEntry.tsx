@@ -49,8 +49,9 @@ export default function StepStockEntry({
       </p>
       <Select
         id="stockProductId"
+        name="stockProductId"
+        control={control}
         label="Produto"
-        register={register("stockProductId")}
         error={errors.stockProductId?.message}
         disabled={isLoading}
         options={activeProducts}

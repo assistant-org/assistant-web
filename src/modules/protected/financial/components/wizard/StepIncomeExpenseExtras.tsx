@@ -1,15 +1,17 @@
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
 import Select from "../../../../../shared/components/Select";
-import { PaymentMethod } from "../../../../../shared/services/transactions/types";
+import {
+  PaymentMethod,
+  PAYMENT_METHOD_LABELS,
+  TransactionType,
+} from "../../../../../shared/services/transactions/types";
 import { IEventOption, TransactionFormValues } from "../../types";
 
-const PAYMENT_METHOD_OPTIONS = [
-  { id: PaymentMethod.MONEY, name: "Dinheiro" },
-  { id: PaymentMethod.PIX, name: "Pix" },
-  { id: PaymentMethod.DEBIT_CARD, name: "Cartão de Débito" },
-  { id: PaymentMethod.CREDIT_CARD, name: "Cartão de Crédito" },
-];
+const PAYMENT_METHOD_OPTIONS = Object.values(PaymentMethod).map((id) => ({
+  id,
+  name: PAYMENT_METHOD_LABELS[id],
+}));
 
 interface StepIncomeExpenseExtrasProps {
   formMethods: UseFormReturn<TransactionFormValues>;
@@ -26,33 +28,41 @@ export default function StepIncomeExpenseExtras({
 }: StepIncomeExpenseExtrasProps) {
   const {
     register,
+    control,
+    watch,
     formState: { errors },
   } = formMethods;
+
+  const type = watch("type");
+  const paymentLabel =
+    type === TransactionType.INCOME
+      ? "Forma de Pagamento (Opcional)"
+      : "Forma de Pagamento";
 
   return (
     <div className="grid grid-cols-1 gap-5">
       <Select
         id="paymentMethod"
-        label="Forma de Pagamento (Opcional)"
-        register={register("paymentMethod")}
+        name="paymentMethod"
+        control={control}
+        label={paymentLabel}
         error={errors.paymentMethod?.message}
         disabled={isLoading}
         options={PAYMENT_METHOD_OPTIONS}
         optionName="name"
         optionId="id"
-        placeholder="Selecione uma forma de pagamento..."
       />
       {eventsEnabled && (
         <Select
           id="eventId"
+          name="eventId"
+          control={control}
           label="Evento Relacionado (Opcional)"
-          register={register("eventId")}
           error={errors.eventId?.message}
           disabled={isLoading}
           options={events}
           optionName="name"
           optionId="id"
-          placeholder="Selecione um evento..."
         />
       )}
       <div>

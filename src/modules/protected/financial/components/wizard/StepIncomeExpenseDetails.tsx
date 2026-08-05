@@ -60,8 +60,9 @@ export default function StepIncomeExpenseDetails({
       />
       <Select
         id="categoryId"
+        name="categoryId"
+        control={control}
         label="Categoria"
-        register={register("categoryId")}
         error={errors.categoryId?.message}
         disabled={isLoading}
         options={filteredCategories}
