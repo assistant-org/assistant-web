@@ -16,10 +16,16 @@ export interface IProductSummary {
   totalAvailable: number;
 }
 
+export interface IEventOption {
+  id: string;
+  name: string;
+}
+
 export interface IStockPresentationProps {
   products: Product[];
   batches: StockBatch[];
   allBatches: StockBatch[];
+  events: IEventOption[];
   summaries: IProductSummary[];
   filters: IStockFilters;
   onFilterChange: (field: keyof IStockFilters, value: string) => void;
@@ -36,6 +42,21 @@ export interface IStockPresentationProps {
   selectedBatch: StockBatch | null;
   onOpenDetails: (batch: StockBatch) => void;
   onCloseDetails: () => void;
+
+  onOpenEdit: (batch: StockBatch) => void;
+  isEditModalOpen: boolean;
+  onCloseEdit: () => void;
+  onSaveBatchEdit: (updates: {
+    expiryDate?: string | null;
+    observations?: string | null;
+    unitValue?: number;
+  }) => void;
+  isDeleteModalOpen: boolean;
+  onOpenDelete: () => void;
+  onCloseDelete: () => void;
+  onConfirmDelete: () => void;
+  isDeletingBatch: boolean;
+
   isLoading: boolean;
 
   page: number;

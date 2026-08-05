@@ -7,6 +7,7 @@ import {
   StockBatch,
   StockBatchStatus,
 } from "../../../../../shared/services/stock/types";
+import { formatDateBR } from "../../../../../shared/utils/formatDate";
 import { StockFormValues } from "../../schema";
 
 interface StepOutgoingDetailsProps {
@@ -44,7 +45,7 @@ export default function StepOutgoingDetails({
     id: b.id,
     name: `Lote #${b.id} · ${b.availableQuantity.toLocaleString("pt-BR", {
       maximumFractionDigits: 2,
-    })} L${b.expiryDate ? ` · val. ${new Date(b.expiryDate).toLocaleDateString("pt-BR")}` : ""}`,
+    })} L${b.expiryDate ? ` · val. ${formatDateBR(b.expiryDate)}` : ""}`,
   }));
 
   return (
@@ -75,11 +76,18 @@ export default function StepOutgoingDetails({
       <Input
         id="quantity"
         label="Quantidade (litros)"
-        type="number"
-        step="any"
-        register={register("quantity", { valueAsNumber: true })}
+        type="text"
+        inputMode="decimal"
+        register={register("quantity", {
+          setValueAs: (v) => {
+            if (v === "" || v == null) return NaN;
+            const n = Number(String(v).replace(",", "."));
+            return Number.isFinite(n) ? n : NaN;
+          },
+        })}
         error={errors.quantity?.message}
         disabled={isLoading}
+        placeholder="0"
       />
     </div>
   );

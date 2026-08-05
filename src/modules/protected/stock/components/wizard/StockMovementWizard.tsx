@@ -10,11 +10,15 @@ import {
 import { StockFormValues } from "../../schema";
 import { getStockStepsForType, StockStepKey } from "./steps";
 import StepTypeCards from "./StepTypeCards";
-import StepEntryDetails from "./StepEntryDetails";
+import StepOperation from "./StepOperation";
 import StepEntryMeta from "./StepEntryMeta";
-import StepOutgoingDetails from "./StepOutgoingDetails";
 import StepOutgoingMeta from "./StepOutgoingMeta";
 import StepReview from "./StepReview";
+
+interface IEventOption {
+  id: string;
+  name: string;
+}
 
 interface StockMovementWizardProps {
   isOpen: boolean;
@@ -24,6 +28,7 @@ interface StockMovementWizardProps {
   isLoading: boolean;
   products: Product[];
   batches: StockBatch[];
+  events: IEventOption[];
 }
 
 export default function StockMovementWizard({
@@ -34,6 +39,7 @@ export default function StockMovementWizard({
   isLoading,
   products,
   batches,
+  events,
 }: StockMovementWizardProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const { watch, setValue, trigger, handleSubmit, getValues } = formMethods;
@@ -52,13 +58,21 @@ export default function StockMovementWizard({
 
   const handleTypeChange = (newType: StockMovementType) => {
     setValue("type", newType);
-    setValue("batchId", null);
-    setValue("unitValue", newType === StockMovementType.ENTRY ? 0 : null);
+    setValue("eventId", null);
+    setValue("mode", "individual");
+    setValue("items", [
+      {
+        productId: "",
+        batchId: null,
+        quantity: 0,
+        unitValue: newType === StockMovementType.ENTRY ? 0 : null,
+      },
+    ]);
   };
 
   const handleNext = async () => {
     const fields = currentStep.fields;
-    const valid = fields.length === 0 ? true : await trigger(fields);
+    const valid = fields.length === 0 ? true : await trigger(fields as any);
     if (valid) setCurrentStepIndex((i) => Math.min(i + 1, steps.length - 1));
   };
 
@@ -81,31 +95,29 @@ export default function StockMovementWizard({
     })} L`;
   };
 
+  const resolveEventName = (id?: string | null) =>
+    events.find((e) => e.id === id)?.name || id || "-";
+
   const renderBody = () => {
     switch (currentStep.key) {
       case "type":
         return <StepTypeCards value={type} onChange={handleTypeChange} disabled={isLoading} />;
-      case "entryDetails":
+      case "operation":
         return (
-          <StepEntryDetails
-            formMethods={formMethods}
-            products={products}
-            isLoading={isLoading}
-          />
-        );
-      case "entryMeta":
-        return <StepEntryMeta formMethods={formMethods} isLoading={isLoading} />;
-      case "outgoingDetails":
-        return (
-          <StepOutgoingDetails
+          <StepOperation
             formMethods={formMethods}
             products={products}
             batches={batches}
+            events={events}
             isLoading={isLoading}
           />
         );
-      case "outgoingMeta":
-        return <StepOutgoingMeta formMethods={formMethods} isLoading={isLoading} />;
+      case "meta":
+        return type === StockMovementType.ENTRY ? (
+          <StepEntryMeta formMethods={formMethods} isLoading={isLoading} />
+        ) : (
+          <StepOutgoingMeta formMethods={formMethods} isLoading={isLoading} />
+        );
       case "review":
         return (
           <StepReview
@@ -115,6 +127,7 @@ export default function StockMovementWizard({
             onEditStep={goToStep}
             resolveProductName={resolveProductName}
             resolveBatchLabel={resolveBatchLabel}
+            resolveEventName={resolveEventName}
           />
         );
       default:

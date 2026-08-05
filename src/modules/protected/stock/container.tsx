@@ -8,6 +8,7 @@ import { productsService } from "../../../shared/services/products/products.serv
 import { Product } from "../../../shared/services/products/types";
 import { stockBatchesService } from "../../../shared/services/stock/stockBatches.service";
 import { stockMovementsService } from "../../../shared/services/stock/stockMovements.service";
+import { eventsService } from "../../../shared/services/events/events.service";
 import {
   StockBatch,
   StockBatchStatus,
@@ -15,8 +16,7 @@ import {
 } from "../../../shared/services/stock/types";
 import { useToast } from "../../../shared/context/ToastContext";
 import { useServerList } from "../../../shared/hooks/useServerList";
-
-const today = () => new Date().toISOString().split("T")[0];
+import { todayISODate } from "../../../shared/utils/formatDate";
 
 const initialFilters: IStockFilters = {
   productId: "",
@@ -24,13 +24,37 @@ const initialFilters: IStockFilters = {
   expiryBefore: "",
 };
 
+interface IEventOption {
+  id: string;
+  name: string;
+}
+
+function emptyForm(): StockFormValues {
+  return {
+    type: StockMovementType.ENTRY,
+    mode: "individual",
+    eventId: "",
+    items: [{ productId: "", batchId: null, quantity: 0, unitValue: 0 }],
+    date: todayISODate(),
+    entryDate: todayISODate(),
+    expiryDate: null,
+    observations: null,
+    reason: null,
+    direction: null,
+  };
+}
+
 export default function StockContainer() {
   const [products, setProducts] = useState<Product[]>([]);
   const [allBatches, setAllBatches] = useState<StockBatch[]>([]);
+  const [events, setEvents] = useState<IEventOption[]>([]);
   const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
   const [isSavingMovement, setIsSavingMovement] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState<StockBatch | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeletingBatch, setIsDeletingBatch] = useState(false);
 
   const { success, error: toastError } = useToast();
 
@@ -62,59 +86,47 @@ export default function StockContainer() {
       includeInactive: false,
       trackStockOnly: true,
     });
-    if (result.error) {
-      toastError(result.error);
-    } else {
-      setProducts(result.data || []);
-    }
+    if (result.error) toastError(result.error);
+    else setProducts(result.data || []);
   }, [toastError]);
 
   const loadAllBatches = useCallback(async () => {
     const result = await stockBatchesService.findAll();
+    if (result.error) toastError(result.error);
+    else setAllBatches(result.data || []);
+  }, [toastError]);
+
+  const loadEvents = useCallback(async () => {
+    const result = await eventsService.findAll();
     if (result.error) {
       toastError(result.error);
-    } else {
-      setAllBatches(result.data || []);
+      return;
     }
+    const items = Array.isArray(result.data) ? result.data : [];
+    setEvents(
+      items
+        .filter((e: { id?: string }) => e.id)
+        .map((e: { id?: string; name: string }) => ({
+          id: String(e.id),
+          name: e.name,
+        })),
+    );
   }, [toastError]);
 
   useEffect(() => {
     loadProducts();
     loadAllBatches();
-  }, [loadProducts, loadAllBatches]);
+    loadEvents();
+  }, [loadProducts, loadAllBatches, loadEvents]);
 
   const movementFormMethods = useForm<StockFormValues>({
     resolver: zodResolver(stockFormSchema) as Resolver<StockFormValues>,
-    defaultValues: {
-      type: StockMovementType.ENTRY,
-      productId: "",
-      batchId: null,
-      quantity: undefined,
-      date: today(),
-      entryDate: today(),
-      unitValue: 0,
-      expiryDate: null,
-      observations: null,
-      reason: null,
-      direction: null,
-    },
+    defaultValues: emptyForm(),
   });
 
   useEffect(() => {
     if (isMovementModalOpen) {
-      movementFormMethods.reset({
-        type: StockMovementType.ENTRY,
-        productId: "",
-        batchId: null,
-        quantity: undefined,
-        date: today(),
-        entryDate: today(),
-        unitValue: 0,
-        expiryDate: null,
-        observations: null,
-        reason: null,
-        direction: null,
-      });
+      movementFormMethods.reset(emptyForm());
     }
   }, [isMovementModalOpen, movementFormMethods]);
 
@@ -162,54 +174,110 @@ export default function StockContainer() {
   const handleSaveMovement = async (data: StockFormValues) => {
     setIsSavingMovement(true);
     try {
-      if (data.type === StockMovementType.ENTRY) {
-        const result = await stockMovementsService.create({
-          type: StockMovementType.ENTRY,
-          productId: data.productId,
-          quantity: data.quantity!,
-          unitValue: data.unitValue ?? 0,
-          entryDate: data.entryDate || today(),
-          expiryDate: data.expiryDate || null,
-          observations: data.observations || data.reason || null,
-          reason: data.reason || null,
-        });
-        if (result.error) {
-          toastError(result.error);
+      const items = data.items || [];
+      if (items.length === 0) {
+        toastError("Adicione pelo menos um item");
+        setIsSavingMovement(false);
+        return;
+      }
+
+      const operationGroupId =
+        items.length > 1 ? crypto.randomUUID() : null;
+
+      for (const item of items) {
+        if (data.type === StockMovementType.ENTRY) {
+          const product = products.find((p) => p.id === item.productId);
+          const result = await stockMovementsService.create({
+            type: StockMovementType.ENTRY,
+            productId: item.productId,
+            quantity: item.quantity,
+            unitValue: product?.defaultUnitValue ?? item.unitValue ?? 0,
+            entryDate: data.entryDate || todayISODate(),
+            expiryDate: data.expiryDate || null,
+            observations: data.observations || null,
+            reason: data.reason || null,
+            eventId: data.eventId || null,
+            operationGroupId,
+          });
+          if (result.error) {
+            toastError(result.error);
+            setIsSavingMovement(false);
+            return;
+          }
         } else {
-          refresh();
-          setIsMovementModalOpen(false);
-          success("Entrada registrada com sucesso!");
-        }
-      } else {
-        const result = await stockMovementsService.create({
-          type: data.type as
-            | StockMovementType.EXIT
-            | StockMovementType.LOSS
-            | StockMovementType.INTERNAL_CONSUMPTION,
-          productId: data.productId,
-          batchId: data.batchId!,
-          quantity: data.quantity!,
-          date: data.date || today(),
-          reason: data.reason || data.observations || null,
-        });
-        if (result.error) {
-          toastError(result.error);
-        } else {
-          refresh();
-          setIsMovementModalOpen(false);
-          success("Movimentação registrada com sucesso!");
+          const result = await stockMovementsService.create({
+            type: data.type as
+              | StockMovementType.EXIT
+              | StockMovementType.LOSS
+              | StockMovementType.INTERNAL_CONSUMPTION,
+            productId: item.productId,
+            batchId: item.batchId!,
+            quantity: item.quantity,
+            date: data.date || todayISODate(),
+            reason: data.reason || data.observations || null,
+            eventId: data.eventId || null,
+            operationGroupId,
+          });
+          if (result.error) {
+            toastError(result.error);
+            setIsSavingMovement(false);
+            return;
+          }
         }
       }
+
+      refresh();
+      setIsMovementModalOpen(false);
+      success(
+        items.length > 1
+          ? "Movimentação em lote registrada com sucesso!"
+          : "Movimentação registrada com sucesso!",
+      );
     } catch (err: unknown) {
       toastError(err instanceof Error ? err.message : "Erro interno");
     }
     setIsSavingMovement(false);
   };
 
+  const handleSaveBatchEdit = async (updates: {
+    expiryDate?: string | null;
+    observations?: string | null;
+    unitValue?: number;
+  }) => {
+    if (!selectedBatch) return;
+    const result = await stockBatchesService.update(selectedBatch.id, updates);
+    if (result.error) {
+      toastError(result.error);
+      return;
+    }
+    setSelectedBatch(result.data);
+    setIsEditModalOpen(false);
+    refresh();
+    success("Lote atualizado com sucesso!");
+  };
+
+  const handleConfirmDeleteBatch = async () => {
+    if (!selectedBatch) return;
+    setIsDeletingBatch(true);
+    const result = await stockBatchesService.delete(selectedBatch.id);
+    setIsDeletingBatch(false);
+    if (result.error) {
+      toastError(result.error);
+      return;
+    }
+    setIsDeleteModalOpen(false);
+    setIsEditModalOpen(false);
+    setIsDetailsModalOpen(false);
+    setSelectedBatch(null);
+    refresh();
+    success("Lote excluído com sucesso!");
+  };
+
   const presentationProps: IStockPresentationProps = {
     products,
     batches: list.items,
     allBatches,
+    events,
     summaries,
     filters: list.filters,
     onFilterChange: handleFilterChange,
@@ -227,6 +295,22 @@ export default function StockContainer() {
       setIsDetailsModalOpen(false);
       setSelectedBatch(null);
     },
+    onOpenEdit: (batch) => {
+      setSelectedBatch(batch);
+      setIsDetailsModalOpen(false);
+      setIsEditModalOpen(true);
+    },
+    isEditModalOpen,
+    onCloseEdit: () => {
+      setIsEditModalOpen(false);
+      setSelectedBatch(null);
+    },
+    onSaveBatchEdit: handleSaveBatchEdit,
+    isDeleteModalOpen,
+    onOpenDelete: () => setIsDeleteModalOpen(true),
+    onCloseDelete: () => setIsDeleteModalOpen(false),
+    onConfirmDelete: handleConfirmDeleteBatch,
+    isDeletingBatch,
     isLoading: list.loading,
     page: list.page,
     pageSize: list.pageSize,

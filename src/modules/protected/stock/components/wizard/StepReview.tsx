@@ -1,6 +1,7 @@
 import React from "react";
 import { Pencil } from "lucide-react";
 import { StockMovementType } from "../../../../../shared/services/stock/types";
+import { formatDateBR } from "../../../../../shared/utils/formatDate";
 import { StockFormValues } from "../../schema";
 import { StockStepDefinition, StockStepKey } from "./steps";
 
@@ -16,12 +17,6 @@ function formatCurrency(value?: number | null): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function formatDate(date?: string | null): string {
-  if (!date) return "-";
-  const parsed = new Date(date);
-  return Number.isNaN(parsed.getTime()) ? date : parsed.toLocaleDateString("pt-BR");
-}
-
 interface StepReviewProps {
   values: StockFormValues;
   type: StockMovementType;
@@ -29,6 +24,7 @@ interface StepReviewProps {
   onEditStep: (key: StockStepKey) => void;
   resolveProductName: (id?: string | null) => string;
   resolveBatchLabel: (id?: string | null) => string;
+  resolveEventName: (id?: string | null) => string;
 }
 
 export default function StepReview({
@@ -38,110 +34,100 @@ export default function StepReview({
   onEditStep,
   resolveProductName,
   resolveBatchLabel,
+  resolveEventName,
 }: StepReviewProps) {
-  const groups = steps
-    .map((step) => {
-      switch (step.key) {
-        case "type":
-          return {
-            stepKey: step.key,
-            title: "Tipo",
-            rows: [{ label: "Tipo", value: TYPE_LABELS[type] || type }],
-          };
-        case "entryDetails":
-          return {
-            stepKey: step.key,
-            title: "Produto e quantidade",
-            rows: [
-              { label: "Produto", value: resolveProductName(values.productId) },
-              {
-                label: "Quantidade",
-                value: `${(values.quantity ?? 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} L`,
-              },
-              { label: "Valor por litro", value: formatCurrency(values.unitValue) },
-              {
-                label: "Valor total",
-                value: formatCurrency((values.quantity ?? 0) * (values.unitValue ?? 0)),
-              },
-            ],
-          };
-        case "entryMeta":
-          return {
-            stepKey: step.key,
-            title: "Datas e descrição",
-            rows: [
-              { label: "Data da compra", value: formatDate(values.entryDate) },
-              { label: "Validade", value: formatDate(values.expiryDate) },
-              { label: "Descrição", value: values.observations || "-" },
-            ],
-          };
-        case "outgoingDetails":
-          return {
-            stepKey: step.key,
-            title: "Produto e lote",
-            rows: [
-              { label: "Produto", value: resolveProductName(values.productId) },
-              { label: "Lote", value: resolveBatchLabel(values.batchId) },
-              {
-                label: "Quantidade",
-                value: `${(values.quantity ?? 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} L`,
-              },
-            ],
-          };
-        case "outgoingMeta":
-          return {
-            stepKey: step.key,
-            title: "Data e descrição",
-            rows: [
-              { label: "Data", value: formatDate(values.date) },
-              { label: "Descrição", value: values.reason || "-" },
-            ],
-          };
-        default:
-          return null;
-      }
-    })
-    .filter(Boolean) as {
-    stepKey: StockStepKey;
-    title: string;
-    rows: { label: string; value: string }[];
-  }[];
+  const isEntry = type === StockMovementType.ENTRY;
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Confira os dados antes de salvar. Use o lápis para corrigir.
-      </p>
-      {groups.map((group) => (
-        <div
-          key={group.stepKey}
-          className="rounded-lg border border-gray-200 dark:border-gray-700 p-4"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
-              {group.title}
-            </h4>
-            <button
-              type="button"
-              onClick={() => onEditStep(group.stepKey)}
-              className="text-indigo-600 hover:text-indigo-800 dark:text-zinc-400 p-1"
-              aria-label={`Editar ${group.title}`}
-            >
-              <Pencil className="w-4 h-4" />
-            </button>
-          </div>
-          <dl className="space-y-1.5">
-            {group.rows.map((row) => (
-              <div key={row.label} className="flex justify-between gap-4 text-sm">
-                <dt className="text-gray-500 dark:text-gray-400">{row.label}</dt>
-                <dd className="text-gray-900 dark:text-white font-medium text-right">
-                  {row.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
+      <div className="rounded-lg border border-gray-200 dark:border-gray-600 p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Tipo</h3>
+          <button type="button" onClick={() => onEditStep("type")} className="text-indigo-600 p-1">
+            <Pencil className="w-4 h-4" />
+          </button>
         </div>
-      ))}
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          {TYPE_LABELS[type] || type}
+          {" · "}
+          {values.mode === "lote" ? "Em lote" : "Individual"}
+        </p>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 dark:border-gray-600 p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Itens</h3>
+          <button
+            type="button"
+            onClick={() => onEditStep("operation")}
+            className="text-indigo-600 p-1"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+          Evento: {resolveEventName(values.eventId)}
+        </p>
+        <ul className="space-y-2">
+          {(values.items || []).map((item, i) => (
+            <li
+              key={i}
+              className="text-sm text-gray-800 dark:text-gray-200 border-t border-gray-100 dark:border-gray-700 pt-2 first:border-0 first:pt-0"
+            >
+              <span className="font-medium">{resolveProductName(item.productId)}</span>
+              {!isEntry && (
+                <span className="text-gray-500"> · {resolveBatchLabel(item.batchId)}</span>
+              )}
+              <span>
+                {" · "}
+                {item.quantity?.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} L
+              </span>
+              {isEntry && (
+                <span className="text-gray-500">
+                  {" · "}
+                  {formatCurrency(item.unitValue)}/L
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 dark:border-gray-600 p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+            {isEntry ? "Datas" : "Data"}
+          </h3>
+          <button type="button" onClick={() => onEditStep("meta")} className="text-indigo-600 p-1">
+            <Pencil className="w-4 h-4" />
+          </button>
+        </div>
+        {isEntry ? (
+          <>
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              Entrada: {formatDateBR(values.entryDate)}
+            </p>
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              Validade: {formatDateBR(values.expiryDate)}
+            </p>
+            {values.observations && (
+              <p className="text-sm text-gray-500 mt-1">{values.observations}</p>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              Data: {formatDateBR(values.date)}
+            </p>
+            {values.reason && (
+              <p className="text-sm text-gray-500 mt-1">{values.reason}</p>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* keep steps prop referenced to avoid unused lint */}
+      <span className="hidden">{steps.length}</span>
     </div>
   );
 }

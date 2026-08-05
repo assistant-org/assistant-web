@@ -49,11 +49,18 @@ export default function StepEntryDetails({
       <Input
         id="quantity"
         label="Quantidade (litros)"
-        type="number"
-        step="any"
-        register={register("quantity", { valueAsNumber: true })}
+        type="text"
+        inputMode="decimal"
+        register={register("quantity", {
+          setValueAs: (v) => {
+            if (v === "" || v == null) return NaN;
+            const n = Number(String(v).replace(",", "."));
+            return Number.isFinite(n) ? n : NaN;
+          },
+        })}
         error={errors.quantity?.message}
         disabled={isLoading}
+        placeholder="0"
       />
       <Controller
         name="unitValue"
@@ -61,14 +68,17 @@ export default function StepEntryDetails({
         render={({ field }) => (
           <MoneyInput
             id="unitValue"
-            label="Valor por litro"
-            value={field.value ?? 0}
+            label="Valor"
+            value={field.value}
             onChange={field.onChange}
             error={errors.unitValue?.message}
             disabled={isLoading}
           />
         )}
       />
+      <p className="-mt-3 text-xs text-gray-500 dark:text-gray-400">
+        Valor por litro (R$/L)
+      </p>
       <div className="rounded-md bg-gray-50 dark:bg-gray-800/60 px-3 py-2 text-sm">
         <span className="text-gray-500 dark:text-gray-400">Valor total do lote: </span>
         <span className="font-semibold text-gray-900 dark:text-white">

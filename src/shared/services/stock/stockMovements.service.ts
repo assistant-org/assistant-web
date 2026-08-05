@@ -7,6 +7,7 @@ import {
   CreateStockMovementRequest,
   StockMovement,
   StockMovementDirection,
+  StockMovementFilters,
   StockMovementOrigin,
   StockMovementType,
 } from "./types";
@@ -25,6 +26,21 @@ function defaultDirectionForType(
   return StockMovementDirection.OUT;
 }
 
+function reverseType(type: StockMovementType): StockMovementType {
+  switch (type) {
+    case StockMovementType.ENTRY:
+      return StockMovementType.EXIT;
+    case StockMovementType.EXIT:
+    case StockMovementType.LOSS:
+    case StockMovementType.INTERNAL_CONSUMPTION:
+      return StockMovementType.ENTRY;
+    case StockMovementType.ADJUSTMENT:
+      return StockMovementType.ADJUSTMENT;
+    default:
+      return StockMovementType.EXIT;
+  }
+}
+
 export class StockMovementsService {
   private tableName = "stock_movements";
 
@@ -41,9 +57,10 @@ export class StockMovementsService {
       const userId = user?.id ?? null;
 
       const isEntry =
-        !("type" in request) ||
         request.type === StockMovementType.ENTRY ||
-        ("unitValue" in request && "entryDate" in request);
+        (!("type" in request) &&
+          "unitValue" in request &&
+          "entryDate" in request);
 
       if (isEntry) {
         return this.createEntry(request as CreateEntryRequest, userId);
@@ -64,6 +81,18 @@ export class StockMovementsService {
     request: CreateEntryRequest,
     userId: string | null,
   ): Promise<ApiResponse<StockMovement>> {
+    if (request.quantity <= 0) {
+      return { data: null, error: "Quantidade deve ser maior que zero" };
+    }
+    if (request.unitValue < 0) {
+      return { data: null, error: "Valor unitário não pode ser negativo" };
+    }
+
+    const origin =
+      request.eventId != null && request.eventId !== ""
+        ? StockMovementOrigin.EVENT
+        : request.origin || StockMovementOrigin.MANUAL;
+
     const { data: batch, error: batchError } = await supabase
       .from("stock_batches")
       .insert([
@@ -74,6 +103,7 @@ export class StockMovementsService {
           initial_quantity: request.quantity,
           unit_value: request.unitValue,
           observations: request.observations || null,
+          event_id: request.eventId || null,
         },
       ])
       .select()
@@ -95,15 +125,16 @@ export class StockMovementsService {
           date: request.entryDate,
           user_id: userId,
           reason: request.reason || null,
-          origin: request.origin || StockMovementOrigin.MANUAL,
+          origin,
           origin_id: request.originId || null,
+          event_id: request.eventId || null,
+          operation_group_id: request.operationGroupId || null,
         },
       ])
       .select()
       .single();
 
     if (movementError || !movement) {
-      // Best-effort cleanup so a failed ENTRY doesn't leave an orphan batch.
       await supabase.from("stock_batches").delete().eq("id", batch.id);
       return {
         data: null,
@@ -118,6 +149,10 @@ export class StockMovementsService {
     request: CreateStockMovementRequest,
     userId: string | null,
   ): Promise<ApiResponse<StockMovement>> {
+    if (request.quantity <= 0) {
+      return { data: null, error: "Quantidade deve ser maior que zero" };
+    }
+
     const direction = defaultDirectionForType(request.type, request.direction);
 
     const availableRes = await stockBatchesService.getAvailableQuantity(
@@ -139,6 +174,11 @@ export class StockMovementsService {
       }
     }
 
+    const origin =
+      request.eventId != null && request.eventId !== ""
+        ? StockMovementOrigin.EVENT
+        : request.origin || StockMovementOrigin.MANUAL;
+
     const { data, error } = await supabase
       .from(this.tableName)
       .insert([
@@ -151,8 +191,13 @@ export class StockMovementsService {
           date: request.date,
           user_id: userId,
           reason: request.reason || null,
-          origin: request.origin || StockMovementOrigin.MANUAL,
+          origin,
           origin_id: request.originId || null,
+          event_id: request.eventId || null,
+          operation_group_id: request.operationGroupId || null,
+          reverses_movement_id: request.reversesMovementId
+            ? Number(request.reversesMovementId)
+            : null,
         },
       ])
       .select()
@@ -165,30 +210,135 @@ export class StockMovementsService {
     return { data: mapMovementRow(data), error: null };
   }
 
-  async findAll(filters?: {
-    batchId?: string;
-    productId?: string;
-    type?: StockMovementType;
-    dateFrom?: string;
-    dateTo?: string;
-  }): Promise<ApiResponse<StockMovement[]>> {
+  /**
+   * Creates an inverse movement linked to the original for audit.
+   * Does not mutate the original row.
+   */
+  async reverse(movementId: string): Promise<ApiResponse<StockMovement>> {
+    try {
+      const { data: row, error } = await supabase
+        .from(this.tableName)
+        .select("*")
+        .eq("id", movementId)
+        .single();
+
+      if (error || !row) {
+        return { data: null, error: error?.message || "Movimentação não encontrada" };
+      }
+
+      const original = mapMovementRow(row);
+      if (original.reversesMovementId) {
+        return { data: null, error: "Não é possível reverter uma reversão" };
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const userId = user?.id ?? null;
+
+      const newType = reverseType(original.type);
+      const reason = `Reversão da movimentação #${original.id}`;
+
+      if (newType === StockMovementType.ENTRY) {
+        // Reverse of EXIT/LOSS/INTERNAL: add stock back to same batch (IN adjustment-style ENTRY on existing batch)
+        return this.createOutgoingOrAdjustment(
+          {
+            type: StockMovementType.ADJUSTMENT,
+            productId: original.productId,
+            batchId: original.batchId,
+            quantity: original.quantity,
+            date: original.date,
+            direction: StockMovementDirection.IN,
+            reason,
+            eventId: original.eventId,
+            reversesMovementId: original.id,
+            origin: StockMovementOrigin.ADJUSTMENT,
+          },
+          userId,
+        );
+      }
+
+      if (original.type === StockMovementType.ENTRY) {
+        // Reverse of ENTRY: remove quantity from the batch
+        return this.createOutgoingOrAdjustment(
+          {
+            type: StockMovementType.EXIT,
+            productId: original.productId,
+            batchId: original.batchId,
+            quantity: original.quantity,
+            date: original.date,
+            reason,
+            eventId: original.eventId,
+            reversesMovementId: original.id,
+            origin: StockMovementOrigin.ADJUSTMENT,
+          },
+          userId,
+        );
+      }
+
+      // ADJUSTMENT: flip direction
+      const flipped =
+        original.direction === StockMovementDirection.IN
+          ? StockMovementDirection.OUT
+          : StockMovementDirection.IN;
+      return this.createOutgoingOrAdjustment(
+        {
+          type: StockMovementType.ADJUSTMENT,
+          productId: original.productId,
+          batchId: original.batchId,
+          quantity: original.quantity,
+          date: original.date,
+          direction: flipped,
+          reason,
+          eventId: original.eventId,
+          reversesMovementId: original.id,
+          origin: StockMovementOrigin.ADJUSTMENT,
+        },
+        userId,
+      );
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Erro interno do servidor";
+      return { data: null, error: message };
+    }
+  }
+
+  async findAll(
+    filters?: StockMovementFilters,
+  ): Promise<ApiResponse<StockMovement[]>> {
     try {
       let query = supabase
         .from(this.tableName)
-        .select("*")
+        .select("*, products(name)")
         .order("date", { ascending: false })
         .order("created_at", { ascending: false });
 
       if (filters?.batchId) query = query.eq("batch_id", filters.batchId);
       if (filters?.productId) query = query.eq("product_id", filters.productId);
       if (filters?.type) query = query.eq("type", filters.type);
+      if (filters?.eventId) query = query.eq("event_id", filters.eventId);
       if (filters?.dateFrom) query = query.gte("date", filters.dateFrom);
       if (filters?.dateTo) query = query.lte("date", filters.dateTo);
 
       const { data, error } = await query;
 
       if (error) {
-        return { data: null, error: error.message };
+        // Fallback without join if products relation fails
+        let fallback = supabase
+          .from(this.tableName)
+          .select("*")
+          .order("date", { ascending: false })
+          .order("created_at", { ascending: false });
+        if (filters?.batchId) fallback = fallback.eq("batch_id", filters.batchId);
+        if (filters?.productId)
+          fallback = fallback.eq("product_id", filters.productId);
+        if (filters?.type) fallback = fallback.eq("type", filters.type);
+        if (filters?.eventId) fallback = fallback.eq("event_id", filters.eventId);
+        if (filters?.dateFrom) fallback = fallback.gte("date", filters.dateFrom);
+        if (filters?.dateTo) fallback = fallback.lte("date", filters.dateTo);
+        const res = await fallback;
+        if (res.error) return { data: null, error: res.error.message };
+        return { data: (res.data || []).map(mapMovementRow), error: null };
       }
 
       return { data: (data || []).map(mapMovementRow), error: null };
