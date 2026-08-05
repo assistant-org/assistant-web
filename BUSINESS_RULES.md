@@ -120,7 +120,7 @@ Exemplos:
 
 * fornecedor;
 * combustível;
-* **Compra de Chopp** (categoria com nome exato; gera entrada de estoque).
+* compra de insumos (sem vínculo automático com estoque).
 
 Impacto:
 
@@ -371,16 +371,49 @@ Período padrão do dashboard: ciclo **20 → 20** (dia 20 do mês até dia 20 d
 
 ---
 
-# Integração Financeiro + Estoque
+# Separação Financeiro × Estoque
 
-Implementada para categoria de despesa com nome exato **`Compra de Chopp`** (criada automaticamente se ausente):
+Processos **independentes**:
 
-1. Wizard financeiro inclui passo de estoque (produto, litros, R$/L, validade opcional);
-2. Valor da despesa = litros × R$/L;
-3. Ao salvar: cria `Transaction` EXPENSE e em seguida `Stock Movement` ENTRY com `origin = 'transacao'` e `origin_id` = id da transação;
-4. Se o estoque falhar, a transação é cancelada e o erro é exibido.
+* Movimentação financeira = compromisso de dinheiro (compra, pagamento, venda).
+* Movimentação de estoque = entrada/saída física do produto.
 
-Vínculo técnico: `stock_movements.origin = 'transacao'` e `origin_id` = id da Transaction.
+Não há criação automática de lote ao lançar despesa. Relação futura, se houver, será apenas por referência opcional — nunca obrigatória.
+
+---
+
+# Regras de Estoque (operacional)
+
+## Evento
+
+* **Todas** as movimentações de estoque: evento **obrigatório** (um único evento por operação, inclusive multi-item).
+* **LOSS** e **INTERNAL_CONSUMPTION**: evento **não** exigido.
+* O evento da entrada fica no lote (`stock_batches.event_id`) e aparece no select de lote na saída.
+
+## Multi-item (Individual / Em lote)
+
+* Modo **Individual** (padrão): um produto por operação.
+* Modo **Em lote**: vários itens na mesma operação; UX colapsa linhas em cards com edição.
+* Persistência: N movimentações com o mesmo `operation_group_id`.
+* Entrada por item: produto + quantidade + valor/L (pré-preenchido do preço padrão do produto).
+* Saída por item: produto + lote + quantidade (lote não pode repetir na mesma operação).
+
+## Validação numérica
+
+* Quantidade > 0.
+* Valor unitário ≥ 0.
+* Saídas/perdas/consumo não podem exceder litros disponíveis do lote.
+
+## Histórico e reversão
+
+* Tela `/stock/history`: lista todas as movimentações (filtros produto, tipo, evento, período), ordem mais recente → antiga.
+* Movimentações concluídas **não** são editadas.
+* **Reverter**: cria movimentação inversa vinculada (`reverses_movement_id`); histórico original permanece.
+
+## Edição de lote (chopp)
+
+* Resumo escolhe campo a editar (validade, valor unitário, observações).
+* Exclusão com confirmação (cascade remove movimentações do lote).
 
 ---
 
