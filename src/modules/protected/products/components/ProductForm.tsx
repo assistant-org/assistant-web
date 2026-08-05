@@ -45,9 +45,6 @@ export default function ProductForm({
             />
           )}
         />
-        <p className="-mt-4 text-xs text-gray-500 dark:text-gray-400">
-          Preço padrão por litro (R$/L)
-        </p>
       </div>
 
       <div className="mt-8 pt-5">

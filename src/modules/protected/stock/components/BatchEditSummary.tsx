@@ -95,10 +95,8 @@ export default function BatchEditSummary({
           label="Valor"
           value={unitValue}
           onChange={setUnitValue}
+          disabled={isLoading}
         />
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          Valor unitário por litro (R$/L)
-        </p>
       );
     }
     if (section === "observations") {

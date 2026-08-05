@@ -76,9 +76,6 @@ export default function StepEntryDetails({
           />
         )}
       />
-      <p className="-mt-3 text-xs text-gray-500 dark:text-gray-400">
-        Valor por litro (R$/L)
-      </p>
       <div className="rounded-md bg-gray-50 dark:bg-gray-800/60 px-3 py-2 text-sm">
         <span className="text-gray-500 dark:text-gray-400">Valor total do lote: </span>
         <span className="font-semibold text-gray-900 dark:text-white">
