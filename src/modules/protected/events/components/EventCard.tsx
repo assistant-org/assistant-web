@@ -1,5 +1,6 @@
 import React from "react";
 import { Pencil } from "lucide-react";
+import { formatDateBR } from "../../../../shared/utils/formatDate";
 import { EVENT_TYPE_LABELS, IEvent } from "../types";
 
 interface EventCardProps {
@@ -25,7 +26,7 @@ export default function EventCard({ events, onEdit }: EventCardProps) {
               {event.name}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              {new Date(event.date).toLocaleDateString("pt-BR")}
+              {formatDateBR(event.date)}
               {" · "}
               {EVENT_TYPE_LABELS[event.type] ?? event.type}
             </p>

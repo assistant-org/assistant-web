@@ -8,6 +8,7 @@ import { eventsService } from "../../../shared/services/events/events.service";
 import { useToast } from "../../../shared/context/ToastContext";
 import { useServerList } from "../../../shared/hooks/useServerList";
 import { PaginatedResult } from "../../../shared/services/types";
+import { todayISODate } from "../../../shared/utils/formatDate";
 
 type EventListFilters = Record<string, never>;
 
@@ -60,7 +61,7 @@ export default function EventsContainer() {
     } else {
       formMethods.reset({
         name: "",
-        date: new Date().toISOString().split("T")[0],
+        date: todayISODate(),
         type: undefined,
         observations: "",
       });

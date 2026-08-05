@@ -6,6 +6,7 @@ import {
   PAYMENT_METHOD_LABELS,
   PaymentMethod,
 } from "../../../../shared/services/transactions/types";
+import { formatDateBR } from "../../../../shared/utils/formatDate";
 import { ITransactionListProps } from "../types";
 
 const TYPE_BADGE: Record<TransactionType, { label: string; className: string }> = {
@@ -87,7 +88,7 @@ const TransactionTable: React.FC<ITransactionListProps> = ({
                 }`}
               >
                 <td className="px-6 py-4">
-                  {new Date(transaction.date).toLocaleDateString("pt-BR")}
+                  {formatDateBR(transaction.date)}
                 </td>
                 <td className="px-6 py-4">
                   <span

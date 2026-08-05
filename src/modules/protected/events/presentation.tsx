@@ -8,6 +8,7 @@ import EventCard from "./components/EventCard";
 import TableActions from "../../../shared/components/TableActions";
 import PaginationControls from "../../../shared/components/PaginationControls";
 import { useMediaQuery } from "../../../shared/hooks/useMediaQuery";
+import { formatDateBR } from "../../../shared/utils/formatDate";
 
 export default function EventsPresentation({
   events,
@@ -67,7 +68,7 @@ export default function EventsPresentation({
                       {event.name}
                     </td>
                     <td className="px-6 py-4">
-                      {new Date(event.date).toLocaleDateString()}
+                      {formatDateBR(event.date)}
                     </td>
                     <td className="px-6 py-4">
                       {EVENT_TYPE_LABELS[event.type] ?? event.type}

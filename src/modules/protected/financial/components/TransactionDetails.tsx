@@ -3,6 +3,7 @@ import {
   TransactionType,
   PAYMENT_METHOD_LABELS,
 } from "../../../../shared/services/transactions/types";
+import { formatDateBR } from "../../../../shared/utils/formatDate";
 import { ITransactionDetailsProps } from "../types";
 import { TYPE_BADGE, VALUE_CLASSES, VALUE_SIGN, formatCurrency } from "./TransactionTable";
 
@@ -38,7 +39,7 @@ const TransactionDetails: React.FC<ITransactionDetailsProps> = ({
         </span>
       </Field>
 
-      <Field label="Data">{new Date(transaction.date).toLocaleDateString("pt-BR")}</Field>
+      <Field label="Data">{formatDateBR(transaction.date)}</Field>
 
       {isTransfer ? (
         <>
