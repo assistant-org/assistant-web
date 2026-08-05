@@ -78,7 +78,7 @@ const MoneyInput: React.FC<MoneyInputProps> = ({
     }
   }, [value]);
 
-  const displayValue = cents === 0 ? "" : formatCentsToDisplay(cents);
+  const displayValue = formatCentsToDisplay(cents);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const allowedKeys = [
