@@ -26,7 +26,7 @@ export default function PageHeader({
   const hasToolbar = Boolean(filters || actions);
 
   return (
-    <div className="sticky top-0 z-10 -mx-6 px-6 max-[700px]:pl-16 pt-1 pb-4 mb-4 bg-gray-100/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-transparent">
+    <div className="sticky top-0 z-10 pt-1 pb-4 mb-4 bg-gray-100/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-transparent">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">

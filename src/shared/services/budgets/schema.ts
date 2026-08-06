@@ -59,6 +59,7 @@ export const budgetFormSchema = z.object({
       }
     }),
   extras: z.array(budgetExtraSchema),
+  correctedLiters: z.number().positive().nullable().optional(),
   clientName: z.string().min(1, "Nome obrigatório"),
   clientPhone: z.string().min(8, "Telefone obrigatório"),
   clientCity: z.string().min(1, "Cidade obrigatória"),
@@ -78,6 +79,7 @@ export const budgetFormDefaults = (): BudgetFormValues => ({
   distanceKm: 10,
   flavors: [],
   extras: [],
+  correctedLiters: null,
   clientName: "",
   clientPhone: "",
   clientCity: "",

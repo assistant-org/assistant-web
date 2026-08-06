@@ -41,11 +41,23 @@ export class BudgetCalculatorService {
         ? input.flavors.map((f) => ({ ...f, percent: 100 }))
         : input.flavors;
 
+    const kegPlanResult = beerDistribution.planKegs(requiredLiters);
+    const suppliedLiters = kegPlanResult.suppliedLiters;
+
+    const hasCorrected =
+      input.correctedLiters != null &&
+      Number.isFinite(input.correctedLiters) &&
+      input.correctedLiters > 0;
+    const correctedLiters = hasCorrected
+      ? roundLiters(input.correctedLiters as number)
+      : null;
+    const wasLitersAdjusted = Boolean(correctedLiters);
+    const billingLiters = correctedLiters ?? suppliedLiters;
+
     const allocations = beerDistribution.allocateFlavorLiters(
-      requiredLiters,
+      billingLiters,
       flavorsWithPercent,
     );
-
     const flavorLines: BudgetFlavorLine[] = allocations.map((a) => ({
       productId: a.productId,
       name: a.name,
@@ -58,8 +70,6 @@ export class BudgetCalculatorService {
     const flavorsSubtotal = roundMoney(
       flavorLines.reduce((sum, line) => sum + line.subtotal, 0),
     );
-
-    const kegPlanResult = beerDistribution.planKegs(requiredLiters);
 
     const distanceCost = roundMoney(
       input.distanceKm * service.distanceRatePerKm,
@@ -112,7 +122,7 @@ export class BudgetCalculatorService {
       otherDrinksFactor,
       totalLiters: requiredLiters,
       requiredLiters,
-      suppliedLiters: kegPlanResult.suppliedLiters,
+      suppliedLiters,
       technicalReserve: kegPlanResult.technicalReserve,
       kegPlan: kegPlanResult.kegs,
       flavorLines,
@@ -129,6 +139,8 @@ export class BudgetCalculatorService {
         ? input.adjustmentReason?.trim() || null
         : null,
       wasAdjusted: hasNegotiation,
+      correctedLiters,
+      wasLitersAdjusted,
     };
   }
 

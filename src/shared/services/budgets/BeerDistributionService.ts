@@ -32,10 +32,6 @@ export interface PercentValidation {
   error: string | null;
 }
 
-function roundLiters(value: number): number {
-  return Math.round(value * 100) / 100;
-}
-
 /**
  * Pure service for flavor % validation, liter allocation, and keg packing.
  * UI must not reimplement these rules.
@@ -66,13 +62,50 @@ export class BeerDistributionService {
     return { ok: true, total: 100, error: null };
   }
 
-  /** Split required liters by percent (pricing base). */
+  /**
+   * Snap raw liters to the nearest combination of 20/30/50 kegs.
+   * On equal distance, prefer the larger supply (e.g. 25 → 30).
+   * Positive amounts below 20 snap to one 20L keg.
+   */
+  snapToKegLiters(raw: number): number {
+    if (!Number.isFinite(raw) || raw <= 0) return 0;
+
+    const need = raw;
+    let bestSupplied: number | null = null;
+    let bestDist = Infinity;
+
+    const maxKegs = Math.ceil(need / 20) + 2;
+
+    for (let c50 = 0; c50 <= maxKegs; c50++) {
+      for (let c30 = 0; c30 <= maxKegs - c50; c30++) {
+        for (let c20 = 0; c20 <= maxKegs - c50 - c30; c20++) {
+          if (c50 + c30 + c20 === 0) continue;
+          const supplied = c50 * 50 + c30 * 30 + c20 * 20;
+          const dist = Math.abs(supplied - need);
+          if (
+            dist < bestDist ||
+            (dist === bestDist &&
+              bestSupplied != null &&
+              supplied > bestSupplied)
+          ) {
+            bestDist = dist;
+            bestSupplied = supplied;
+          }
+        }
+      }
+    }
+
+    return bestSupplied ?? 20;
+  }
+
+  /** Split billing liters by percent, then snap each flavor to keg sizes. */
   allocateFlavorLiters(
-    requiredLiters: number,
+    billingLiters: number,
     flavors: FlavorPercentInput[],
   ): FlavorAllocation[] {
     return flavors.map((flavor) => {
-      const liters = roundLiters((requiredLiters * flavor.percent) / 100);
+      const raw = (billingLiters * flavor.percent) / 100;
+      const liters = this.snapToKegLiters(raw);
       return {
         productId: flavor.productId,
         name: flavor.name,

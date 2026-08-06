@@ -1,7 +1,9 @@
 import React from "react";
 import BudgetPreview from "./BudgetPreview";
-import { BudgetCalculationResult } from "../../../../shared/services/budgets/types";
-import { BudgetServiceType } from "../../../../shared/services/budgets/types";
+import {
+  BudgetCalculationResult,
+  BudgetServiceType,
+} from "../../../../shared/services/budgets/types";
 
 interface StepReviewProps {
   result: BudgetCalculationResult | null;
@@ -10,6 +12,8 @@ interface StepReviewProps {
   adjustmentReason: string | null | undefined;
   onNegotiatedChange: (value: number | null) => void;
   onReasonChange: (value: string) => void;
+  correctedLiters?: number | null;
+  onCorrectedLitersChange?: (value: number | null) => void;
   disabled?: boolean;
 }
 
@@ -20,6 +24,8 @@ export default function StepReview({
   adjustmentReason,
   onNegotiatedChange,
   onReasonChange,
+  correctedLiters,
+  onCorrectedLitersChange,
   disabled,
 }: StepReviewProps) {
   return (
@@ -35,6 +41,9 @@ export default function StepReview({
         adjustmentReason={adjustmentReason}
         onNegotiatedChange={onNegotiatedChange}
         onReasonChange={onReasonChange}
+        correctedLiters={correctedLiters}
+        onCorrectedLitersChange={onCorrectedLitersChange}
+        allowLiterCorrection
         disabled={disabled}
       />
     </div>

@@ -63,7 +63,6 @@ export default function StepPeople({
       />
       <div className="flex justify-between text-xs text-gray-400">
         <span>{PEOPLE_MIN}</span>
-        <span>passo {PEOPLE_STEP}</span>
         <span>{PEOPLE_MAX}</span>
       </div>
     </div>

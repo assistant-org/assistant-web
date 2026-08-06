@@ -47,6 +47,7 @@ export default function BudgetsContainer() {
         distanceKm: watched.distanceKm,
         flavors: watched.flavors || [],
         extras: watched.extras || [],
+        correctedLiters: watched.correctedLiters ?? null,
         negotiatedTotal: watched.negotiatedTotal,
         adjustmentReason: watched.adjustmentReason,
       });

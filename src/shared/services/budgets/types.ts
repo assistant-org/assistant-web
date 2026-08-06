@@ -23,6 +23,8 @@ export interface BudgetCalculateInput {
   distanceKm: number;
   flavors: BudgetFlavorInput[];
   extras: BudgetExtraSelection[];
+  /** Manual total liters (review). Null = bill on suppliedLiters. */
+  correctedLiters?: number | null;
   negotiatedTotal?: number | null;
   adjustmentReason?: string | null;
 }
@@ -77,6 +79,9 @@ export interface BudgetCalculationResult {
   finalTotal: number;
   adjustmentReason: string | null;
   wasAdjusted: boolean;
+  /** Manual total liters when set; otherwise null. */
+  correctedLiters: number | null;
+  wasLitersAdjusted: boolean;
 }
 
 export interface BudgetClientInfo {

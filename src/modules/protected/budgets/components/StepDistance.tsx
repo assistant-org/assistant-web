@@ -76,7 +76,7 @@ export default function StepDistance({
       />
       <div className="flex justify-between text-xs text-gray-400">
         <span>{DISTANCE_MIN} km</span>
-        <span>passo {DISTANCE_STEP}</span>
+        
         <span>{DISTANCE_MAX} km</span>
       </div>
     </div>

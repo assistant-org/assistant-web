@@ -78,6 +78,20 @@ export default function BudgetWizard({
   const nextDisabled =
     isLoading || (isFlavorDistribution && !percentValidation.ok);
 
+  // Drop liter correction when selected flavors change (not on mount)
+  const flavorIdsKey = (values.flavors || [])
+    .map((f) => f.productId)
+    .sort()
+    .join("|");
+  const prevFlavorIdsKey = React.useRef(flavorIdsKey);
+  useEffect(() => {
+    if (prevFlavorIdsKey.current === flavorIdsKey) return;
+    prevFlavorIdsKey.current = flavorIdsKey;
+    if (values.correctedLiters != null) {
+      setValue("correctedLiters", null, { shouldDirty: true });
+    }
+  }, [flavorIdsKey, values.correctedLiters, setValue]);
+
   const previewProps = useMemo(
     () => ({
       result: calculation,
@@ -88,6 +102,9 @@ export default function BudgetWizard({
         setValue("negotiatedTotal", v, { shouldDirty: true }),
       onReasonChange: (v: string) =>
         setValue("adjustmentReason", v || null, { shouldDirty: true }),
+      correctedLiters: values.correctedLiters ?? null,
+      onCorrectedLitersChange: (v: number | null) =>
+        setValue("correctedLiters", v, { shouldDirty: true }),
       disabled: isLoading,
     }),
     [
@@ -95,6 +112,7 @@ export default function BudgetWizard({
       values.serviceType,
       values.negotiatedTotal,
       values.adjustmentReason,
+      values.correctedLiters,
       setValue,
       isLoading,
     ],
