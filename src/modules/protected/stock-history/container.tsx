@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Card from "../../../shared/components/Card";
 import Button from "../../../shared/components/Button";
+import PageHeader from "../../../shared/components/PageHeader";
 import BottomSheet from "../../../shared/components/BottomSheet";
 import FilterButton from "../../../shared/components/FilterButton";
 import FilterPopover from "../../../shared/components/filters/FilterPopover";
@@ -176,31 +177,32 @@ export default function StockHistoryContainer() {
 
   return (
     <div>
-      <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Histórico de Movimentações
-        </h1>
-        {isMobile ? (
-          <FilterButton
-            hasActiveFilters={hasActiveFilters}
-            onClick={() => {
-              setTempFilters(filters);
-              setIsFilterSheetOpen(true);
-            }}
-          />
-        ) : (
-          <FilterPopover
-            isOpen={isFilterPopoverOpen}
-            onOpenChange={(open) => {
-              if (open) setTempFilters(filters);
-              setIsFilterPopoverOpen(open);
-            }}
-            hasActiveFilters={hasActiveFilters}
-          >
-            {filtersPanel}
-          </FilterPopover>
-        )}
-      </div>
+      <PageHeader
+        title="Histórico de Movimentações"
+        subtitle="Entradas e saídas registradas"
+        filters={
+          isMobile ? (
+            <FilterButton
+              hasActiveFilters={hasActiveFilters}
+              onClick={() => {
+                setTempFilters(filters);
+                setIsFilterSheetOpen(true);
+              }}
+            />
+          ) : (
+            <FilterPopover
+              isOpen={isFilterPopoverOpen}
+              onOpenChange={(open) => {
+                if (open) setTempFilters(filters);
+                setIsFilterPopoverOpen(open);
+              }}
+              hasActiveFilters={hasActiveFilters}
+            >
+              {filtersPanel}
+            </FilterPopover>
+          )
+        }
+      />
 
       {filterChips.length > 0 && (
         <div className="mb-4">

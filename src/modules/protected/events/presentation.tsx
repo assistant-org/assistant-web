@@ -2,6 +2,7 @@ import React from "react";
 import { EVENT_TYPE_LABELS, IEventsPresentationProps } from "./types";
 import Card from "../../../shared/components/Card";
 import Button from "../../../shared/components/Button";
+import PageHeader from "../../../shared/components/PageHeader";
 import FormShell from "../../../shared/components/FormShell";
 import EventForm from "./components/EventForm";
 import EventCard from "./components/EventCard";
@@ -30,10 +31,11 @@ export default function EventsPresentation({
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Eventos</h1>
-        <Button onClick={() => onOpenModal()}>+ Novo Evento</Button>
-      </div>
+      <PageHeader
+        title="Eventos"
+        subtitle="Cadastre e acompanhe seus eventos"
+        actions={<Button onClick={() => onOpenModal()}>+ Novo Evento</Button>}
+      />
 
       <Card className={isMobile ? "!p-0 overflow-hidden" : ""}>
         {isMobile ? (

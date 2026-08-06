@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import Card from "../../../shared/components/Card";
 import Button from "../../../shared/components/Button";
+import PageHeader from "../../../shared/components/PageHeader";
 import BottomSheet from "../../../shared/components/BottomSheet";
 import FilterButton from "../../../shared/components/FilterButton";
 import FilterPopover from "../../../shared/components/filters/FilterPopover";
@@ -123,45 +124,50 @@ export default function StockPresentation(props: IStockPresentationProps) {
 
   return (
     <div>
-      <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Estoque</h1>
-        <div className="flex items-center gap-2">
-          <Link
-            to="/stock/history"
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 px-2"
-          >
-            Histórico
-          </Link>
-          {isMobile ? (
-            <FilterButton
-              hasActiveFilters={hasActiveFilters}
-              onClick={() => {
-                setTempFilters(filters);
-                setIsFilterSheetOpen(true);
-              }}
-            />
-          ) : (
-            <FilterPopover
-              isOpen={isFilterPopoverOpen}
-              onOpenChange={(open) => {
-                if (open) setTempFilters(filters);
-                setIsFilterPopoverOpen(open);
-              }}
-              hasActiveFilters={hasActiveFilters}
+      <PageHeader
+        title="Estoque"
+        subtitle="Controle de lotes e movimentações"
+        filters={
+          <>
+            <Link
+              to="/stock/history"
+              className="text-sm font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 px-2"
             >
-              <StockFilters
-                filters={tempFilters}
-                onFilterChange={handleTempFilterChange}
-                onApply={handleApplyFilters}
-                onClearFilters={handleClearFiltersLocal}
-                products={products}
+              Histórico
+            </Link>
+            {isMobile ? (
+              <FilterButton
                 hasActiveFilters={hasActiveFilters}
+                onClick={() => {
+                  setTempFilters(filters);
+                  setIsFilterSheetOpen(true);
+                }}
               />
-            </FilterPopover>
-          )}
+            ) : (
+              <FilterPopover
+                isOpen={isFilterPopoverOpen}
+                onOpenChange={(open) => {
+                  if (open) setTempFilters(filters);
+                  setIsFilterPopoverOpen(open);
+                }}
+                hasActiveFilters={hasActiveFilters}
+              >
+                <StockFilters
+                  filters={tempFilters}
+                  onFilterChange={handleTempFilterChange}
+                  onApply={handleApplyFilters}
+                  onClearFilters={handleClearFiltersLocal}
+                  products={products}
+                  hasActiveFilters={hasActiveFilters}
+                />
+              </FilterPopover>
+            )}
+          </>
+        }
+        actions={
           <Button onClick={onOpenMovementModal}>+ Movimentação</Button>
-        </div>
-      </div>
+        }
+      />
 
       <StockSummaryCards summaries={summaries} />
 

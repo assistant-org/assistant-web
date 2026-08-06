@@ -1,6 +1,6 @@
 export const FEATURES = {
   events: true,
-  budgets: false,
+  budgets: true,
 } as const;
 
 export type FeatureKey = keyof typeof FEATURES;

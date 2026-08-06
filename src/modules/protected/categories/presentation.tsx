@@ -2,6 +2,7 @@ import React from "react";
 import { CATEGORY_TYPE_LABELS, ICategoriesPresentationProps } from "./types";
 import Card from "../../../shared/components/Card";
 import Button from "../../../shared/components/Button";
+import PageHeader from "../../../shared/components/PageHeader";
 import FormShell from "../../../shared/components/FormShell";
 import CategoryForm from "./components/CategoryForm";
 import CategoryCard from "./components/CategoryCard";
@@ -47,10 +48,13 @@ export default function CategoriesPresentation({
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Categorias</h1>
-        <Button onClick={() => onOpenModal()}>+ Nova Categoria</Button>
-      </div>
+      <PageHeader
+        title="Categorias"
+        subtitle="Organize as categorias financeiras"
+        actions={
+          <Button onClick={() => onOpenModal()}>+ Nova Categoria</Button>
+        }
+      />
 
       <Card className={isMobile ? "!p-0 overflow-hidden" : ""}>
         {isMobile ? (
