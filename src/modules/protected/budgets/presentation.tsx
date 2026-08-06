@@ -4,6 +4,8 @@ import Card from "../../../shared/components/Card";
 import PageHeader from "../../../shared/components/PageHeader";
 import { getServiceTypeConfig } from "../../../shared/services/budgets/budget.config";
 import { formatCurrency, formatLiters } from "../../../shared/services/budgets/format";
+import { formatDateBR } from "../../../shared/utils/formatDate";
+import BudgetListCard from "./components/BudgetListCard";
 import BudgetProposalActions from "./components/BudgetProposalActions";
 import BudgetWizard from "./components/BudgetWizard";
 import { IBudgetsPresentationProps } from "./types";
@@ -17,21 +19,27 @@ export default function BudgetsPresentation({
   lastSaved,
   isLoading,
   isSaving,
+  isEditing,
+  wizardKey,
   onStartCreate,
-  onCancelCreate,
+  onCancelWizard,
   onFinalize,
   onBackToList,
+  onEdit,
+  onConclude,
   onDelete,
 }: IBudgetsPresentationProps) {
-  if (mode === "create") {
+  if (mode === "create" || mode === "edit") {
     return (
       <div className="lg:p-6 lg:max-w-6xl lg:mx-auto">
         <BudgetWizard
+          key={wizardKey}
           formMethods={formMethods}
           products={products}
           calculation={calculation}
           isLoading={isSaving}
-          onCancel={onCancelCreate}
+          isEditing={isEditing}
+          onCancel={onCancelWizard}
           onFinalize={onFinalize}
         />
       </div>
@@ -50,14 +58,21 @@ export default function BudgetsPresentation({
               Proposta para <strong>{lastSaved.clientName}</strong> —{" "}
               {getServiceTypeConfig(lastSaved.serviceType).label}
             </p>
+            <p className="text-sm text-gray-500">
+              Evento: {formatDateBR(lastSaved.eventDate)} ·{" "}
+              {lastSaved.clientCity}
+            </p>
             <p className="text-3xl font-bold text-indigo-600">
               {formatCurrency(lastSaved.finalTotal)}
             </p>
             <p className="text-sm text-gray-500">
               {formatLiters(
-                lastSaved.calculation.suppliedLiters ??
-                  lastSaved.calculation.requiredLiters ??
-                  lastSaved.calculation.totalLiters,
+                lastSaved.calculation?.wasLitersAdjusted &&
+                  lastSaved.calculation.correctedLiters != null
+                  ? lastSaved.calculation.correctedLiters
+                  : lastSaved.calculation.suppliedLiters ??
+                      lastSaved.calculation.requiredLiters ??
+                      lastSaved.calculation.totalLiters,
               )}{" "}
               contratados
             </p>
@@ -94,38 +109,13 @@ export default function BudgetsPresentation({
       ) : (
         <div className="space-y-3">
           {budgets.map((budget) => (
-            <Card key={budget.id}>
-              <div className="flex flex-wrap items-start justify-between gap-3 p-1">
-                <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">
-                    {budget.clientName}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {getServiceTypeConfig(budget.serviceType).label} ·{" "}
-                    {budget.clientCity} ·{" "}
-                    {formatLiters(
-                      budget.calculation?.suppliedLiters ??
-                        budget.calculation?.requiredLiters ??
-                        budget.calculation?.totalLiters ??
-                        0,
-                    )}
-                  </p>
-                  <p className="text-lg font-bold text-indigo-600 mt-1">
-                    {formatCurrency(budget.finalTotal)}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2 items-stretch sm:items-end">
-                  <BudgetProposalActions budget={budget} />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => onDelete(budget)}
-                  >
-                    Excluir
-                  </Button>
-                </div>
-              </div>
-            </Card>
+            <BudgetListCard
+              key={budget.id}
+              budget={budget}
+              onEdit={onEdit}
+              onConclude={onConclude}
+              onDelete={onDelete}
+            />
           ))}
         </div>
       )}

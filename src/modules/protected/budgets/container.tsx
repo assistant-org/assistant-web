@@ -12,9 +12,10 @@ import {
 import { Budget } from "../../../shared/services/budgets/types";
 import { productsService } from "../../../shared/services/products/products.service";
 import { Product } from "../../../shared/services/products/types";
+import { budgetToFormValues } from "./budgetToFormValues";
 import BudgetsPresentation from "./presentation";
 
-type Mode = "list" | "create" | "done";
+type Mode = "list" | "create" | "edit" | "done";
 
 export default function BudgetsContainer() {
   const { success, error: toastError } = useToast();
@@ -24,6 +25,7 @@ export default function BudgetsContainer() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Budget | null>(null);
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
 
   const formMethods = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
@@ -75,28 +77,26 @@ export default function BudgetsContainer() {
 
   const handleStartCreate = () => {
     formMethods.reset(budgetFormDefaults());
+    setEditingBudget(null);
     setLastSaved(null);
     setMode("create");
   };
 
-  const handleCancelCreate = () => {
+  const handleCancelWizard = () => {
+    setEditingBudget(null);
     setMode("list");
   };
 
-  const handleFinalize = async () => {
-    const valid = await formMethods.trigger();
-    if (!valid) {
-      toastError("Preencha os campos obrigatórios do cliente e sabores.");
-      return;
-    }
-    if (!calculation) {
-      toastError("Não foi possível calcular o orçamento.");
-      return;
-    }
+  const handleEdit = (budget: Budget) => {
+    formMethods.reset(budgetToFormValues(budget));
+    setEditingBudget(budget);
+    setLastSaved(null);
+    setMode("edit");
+  };
 
-    const data = formMethods.getValues();
-    setIsSaving(true);
-    const result = await budgetsService.create({
+  const buildPayload = (data: BudgetFormValues) => {
+    if (!calculation) return null;
+    return {
       serviceType: data.serviceType,
       people: data.people,
       hours: data.hours,
@@ -113,7 +113,31 @@ export default function BudgetsContainer() {
       clientPhone: data.clientPhone,
       clientCity: data.clientCity,
       notes: data.notes || "",
-    });
+      eventDate: data.eventDate,
+      status: (editingBudget?.status ?? "open") as "open" | "concluded",
+    };
+  };
+
+  const handleFinalize = async () => {
+    const valid = await formMethods.trigger();
+    if (!valid) {
+      toastError("Preencha os campos obrigatórios (cliente, data e sabores).");
+      return;
+    }
+    if (!calculation) {
+      toastError("Não foi possível calcular o orçamento.");
+      return;
+    }
+
+    const data = formMethods.getValues();
+    const payload = buildPayload(data);
+    if (!payload) return;
+
+    setIsSaving(true);
+    const result =
+      mode === "edit" && editingBudget
+        ? await budgetsService.update(editingBudget.id, payload)
+        : await budgetsService.create(payload);
     setIsSaving(false);
 
     if (result.error || !result.data) {
@@ -121,10 +145,37 @@ export default function BudgetsContainer() {
       return;
     }
 
+    if (mode === "edit") {
+      setBudgets((prev) =>
+        prev.map((b) => (b.id === result.data!.id ? result.data! : b)),
+      );
+      success("Orçamento atualizado");
+      setEditingBudget(null);
+      setMode("list");
+      return;
+    }
+
     setLastSaved(result.data);
     setBudgets((prev) => [result.data!, ...prev]);
     success("Orçamento salvo");
     setMode("done");
+  };
+
+  const handleConclude = async (budget: Budget) => {
+    if (budget.status === "concluded") return;
+    const confirmed = window.confirm(
+      `Concluir orçamento de ${budget.clientName}?`,
+    );
+    if (!confirmed) return;
+    const result = await budgetsService.updateStatus(budget.id, "concluded");
+    if (result.error || !result.data) {
+      toastError(result.error || "Erro ao concluir");
+      return;
+    }
+    setBudgets((prev) =>
+      prev.map((b) => (b.id === budget.id ? result.data! : b)),
+    );
+    success("Orçamento concluído");
   };
 
   const handleDelete = async (budget: Budget) => {
@@ -151,10 +202,20 @@ export default function BudgetsContainer() {
       lastSaved={lastSaved}
       isLoading={isLoading}
       isSaving={isSaving}
+      isEditing={mode === "edit"}
+      wizardKey={
+        mode === "edit" && editingBudget
+          ? `edit-${editingBudget.id}`
+          : mode === "create"
+            ? "create"
+            : "list"
+      }
       onStartCreate={handleStartCreate}
-      onCancelCreate={handleCancelCreate}
+      onCancelWizard={handleCancelWizard}
       onFinalize={handleFinalize}
       onBackToList={() => setMode("list")}
+      onEdit={handleEdit}
+      onConclude={handleConclude}
       onDelete={handleDelete}
     />
   );

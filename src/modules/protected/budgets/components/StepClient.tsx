@@ -41,6 +41,14 @@ export default function StepClient({ formMethods, disabled }: StepClientProps) {
         error={errors.clientCity?.message}
         register={register("clientCity")}
       />
+      <Input
+        label="Data do evento"
+        id="eventDate"
+        type="date"
+        disabled={disabled}
+        error={errors.eventDate?.message}
+        register={register("eventDate")}
+      />
       <div>
         <label
           htmlFor="notes"

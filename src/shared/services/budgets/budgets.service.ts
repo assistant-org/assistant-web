@@ -11,11 +11,14 @@ import {
   BudgetExtraLine,
   BudgetFlavorLine,
   BudgetServiceType,
+  BudgetStatus,
   ConsumptionProfileId,
   CreateBudgetRequest,
+  UpdateBudgetRequest,
 } from "./types";
 
 function mapBudgetRow(data: Record<string, unknown>): Budget {
+  const eventDateRaw = data.event_date as string | null | undefined;
   return {
     id: String(data.id),
     serviceType: data.service_type as BudgetServiceType,
@@ -34,8 +37,35 @@ function mapBudgetRow(data: Record<string, unknown>): Budget {
     clientPhone: (data.client_phone as string) || "",
     clientCity: (data.client_city as string) || "",
     notes: (data.notes as string) || "",
+    eventDate: eventDateRaw ? String(eventDateRaw).slice(0, 10) : null,
+    status: (data.status as BudgetStatus) || "open",
+    reminderSentAt: (data.reminder_sent_at as string) || null,
     created_at: data.created_at as string | undefined,
     updated_at: data.updated_at as string | undefined,
+  };
+}
+
+function toRowPayload(payload: CreateBudgetRequest | UpdateBudgetRequest) {
+  return {
+    service_type: payload.serviceType,
+    people: payload.people,
+    hours: payload.hours,
+    consumption_profile: payload.consumptionProfile,
+    other_drinks: payload.otherDrinks,
+    distance_km: payload.distanceKm,
+    flavors: payload.flavors,
+    extras: payload.extras,
+    calculation: payload.calculation,
+    calculated_total: payload.calculatedTotal,
+    final_total: payload.finalTotal,
+    adjustment_reason: payload.adjustmentReason ?? null,
+    client_name: payload.clientName,
+    client_phone: payload.clientPhone,
+    client_city: payload.clientCity,
+    notes: payload.notes ?? "",
+    event_date: payload.eventDate,
+    status: payload.status ?? "open",
+    updated_at: new Date().toISOString(),
   };
 }
 
@@ -46,26 +76,54 @@ export class BudgetsService {
     try {
       const { data, error } = await supabase
         .from(this.tableName)
-        .insert([
-          {
-            service_type: payload.serviceType,
-            people: payload.people,
-            hours: payload.hours,
-            consumption_profile: payload.consumptionProfile,
-            other_drinks: payload.otherDrinks,
-            distance_km: payload.distanceKm,
-            flavors: payload.flavors,
-            extras: payload.extras,
-            calculation: payload.calculation,
-            calculated_total: payload.calculatedTotal,
-            final_total: payload.finalTotal,
-            adjustment_reason: payload.adjustmentReason ?? null,
-            client_name: payload.clientName,
-            client_phone: payload.clientPhone,
-            client_city: payload.clientCity,
-            notes: payload.notes ?? "",
-          },
-        ])
+        .insert([toRowPayload(payload)])
+        .select()
+        .single();
+
+      if (error) {
+        return { data: null, error: error.message };
+      }
+
+      return { data: mapBudgetRow(data), error: null };
+    } catch {
+      return { data: null, error: "Erro interno do servidor" };
+    }
+  }
+
+  async update(
+    id: string,
+    payload: UpdateBudgetRequest,
+  ): Promise<ApiResponse<Budget>> {
+    try {
+      const { data, error } = await supabase
+        .from(this.tableName)
+        .update(toRowPayload(payload))
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        return { data: null, error: error.message };
+      }
+
+      return { data: mapBudgetRow(data), error: null };
+    } catch {
+      return { data: null, error: "Erro interno do servidor" };
+    }
+  }
+
+  async updateStatus(
+    id: string,
+    status: BudgetStatus,
+  ): Promise<ApiResponse<Budget>> {
+    try {
+      const { data, error } = await supabase
+        .from(this.tableName)
+        .update({
+          status,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id)
         .select()
         .single();
 

@@ -91,6 +91,8 @@ export interface BudgetClientInfo {
   notes: string;
 }
 
+export type BudgetStatus = "open" | "concluded";
+
 export interface Budget {
   id: string;
   serviceType: BudgetServiceType;
@@ -109,6 +111,10 @@ export interface Budget {
   clientPhone: string;
   clientCity: string;
   notes: string;
+  /** YYYY-MM-DD */
+  eventDate: string | null;
+  status: BudgetStatus;
+  reminderSentAt: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -130,4 +136,8 @@ export interface CreateBudgetRequest {
   clientPhone: string;
   clientCity: string;
   notes?: string;
+  eventDate: string;
+  status?: BudgetStatus;
 }
+
+export type UpdateBudgetRequest = CreateBudgetRequest;

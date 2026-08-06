@@ -24,7 +24,7 @@ import StepOtherDrinks from "./StepOtherDrinks";
 import StepPeople from "./StepPeople";
 import StepReview from "./StepReview";
 import StepServiceType from "./StepServiceType";
-import { getBudgetSteps } from "./steps";
+import { BudgetStepKey, getBudgetSteps } from "./steps";
 import WizardProgress from "./WizardProgress";
 
 interface BudgetWizardProps {
@@ -32,6 +32,7 @@ interface BudgetWizardProps {
   products: Product[];
   calculation: BudgetCalculationResult | null;
   isLoading: boolean;
+  isEditing?: boolean;
   onCancel: () => void;
   onFinalize: () => void;
 }
@@ -41,11 +42,13 @@ export default function BudgetWizard({
   products,
   calculation,
   isLoading,
+  isEditing = false,
   onCancel,
   onFinalize,
 }: BudgetWizardProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [isDiscardOpen, setIsDiscardOpen] = useState(false);
+  const [didInitEdit, setDidInitEdit] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const isMobileShell = useMediaQuery("(max-width: 1023px)");
 
@@ -57,7 +60,14 @@ export default function BudgetWizard({
     [values.flavors],
   );
 
-  // Keep index valid when steps list shrinks (e.g. remove multi-flavor step)
+  // Open on review when editing
+  useEffect(() => {
+    if (!isEditing || didInitEdit || steps.length === 0) return;
+    const reviewIdx = steps.findIndex((s) => s.key === "review");
+    setStepIndex(reviewIdx >= 0 ? reviewIdx : 0);
+    setDidInitEdit(true);
+  }, [isEditing, didInitEdit, steps]);
+
   useEffect(() => {
     if (stepIndex >= steps.length) {
       setStepIndex(Math.max(0, steps.length - 1));
@@ -78,7 +88,6 @@ export default function BudgetWizard({
   const nextDisabled =
     isLoading || (isFlavorDistribution && !percentValidation.ok);
 
-  // Drop liter correction when selected flavors change (not on mount)
   const flavorIdsKey = (values.flavors || [])
     .map((f) => f.productId)
     .sort()
@@ -118,6 +127,11 @@ export default function BudgetWizard({
     ],
   );
 
+  const goToStep = (key: BudgetStepKey) => {
+    const idx = steps.findIndex((s) => s.key === key);
+    if (idx >= 0) setStepIndex(idx);
+  };
+
   const requestClose = () => {
     if (isLoading) return;
     setIsDiscardOpen(true);
@@ -132,7 +146,6 @@ export default function BudgetWizard({
     if (!step) return;
     if (isFlavorDistribution && !percentValidation.ok) return;
 
-    // On flavors step with a single flavor, force 100%
     if (step.key === "flavors" && values.flavors.length === 1) {
       setValue(
         "flavors",
@@ -145,8 +158,7 @@ export default function BudgetWizard({
       step.fields.length === 0
         ? true
         : step.key === "flavors"
-          ? // Only require at least one flavor here; % validated on distribution or finalize
-            (values.flavors?.length ?? 0) > 0
+          ? (values.flavors?.length ?? 0) > 0
           : await trigger(step.fields);
     if (!valid) {
       if (step.key === "flavors") {
@@ -161,13 +173,9 @@ export default function BudgetWizard({
     setStepIndex((i) => Math.min(i + 1, steps.length - 1));
   };
 
-  const handleBack = () => setStepIndex((i) => Math.max(i - 1, 0));
-
-  const nextLabel = isLast
-    ? "Finalizar"
-    : isReview
-      ? "Continuar para cliente"
-      : "Próximo";
+  const handleBack = () => {
+    setStepIndex((i) => Math.max(i - 1, 0));
+  };
 
   const closeButton = (
     <button
@@ -186,8 +194,12 @@ export default function BudgetWizard({
       isOpen={isDiscardOpen}
       onCancel={() => setIsDiscardOpen(false)}
       onConfirm={confirmDiscard}
-      title="Cancelar orçamento?"
-      message="Deseja realmente cancelar este orçamento? Todas as informações preenchidas serão perdidas."
+      title={isEditing ? "Cancelar edição?" : "Cancelar orçamento?"}
+      message={
+        isEditing
+          ? "Deseja sair sem salvar as alterações?"
+          : "Deseja realmente cancelar este orçamento? Todas as informações preenchidas serão perdidas."
+      }
     />
   );
 
@@ -281,32 +293,56 @@ export default function BudgetWizard({
             disabled={isLoading}
           />
         );
-      case "review":
-        return <StepReview {...previewProps} />;
       case "client":
         return <StepClient formMethods={formMethods} disabled={isLoading} />;
+      case "review":
+        return (
+          <StepReview
+            values={values}
+            steps={steps}
+            onEditStep={goToStep}
+            isEditing={isEditing}
+            {...previewProps}
+          />
+        );
       default:
         return null;
     }
   };
 
+  const onPrimaryClick = async () => {
+    if (isReview && !isLast) {
+      // Should not happen after reorder; still save if review
+      const valid = await trigger();
+      if (valid) onFinalize();
+      return;
+    }
+    await handleNext();
+  };
+
+  // When editing a section (not on review), "Revisar" returns to review
+  const showReviewReturn = isEditing && !isReview;
   const footer = (
     <div className="flex items-center justify-between gap-2">
       <Button
         type="button"
         variant="secondary"
-        onClick={handleBack}
-        disabled={isFirst || isLoading}
+        onClick={
+          showReviewReturn
+            ? () => goToStep("review")
+            : handleBack
+        }
+        disabled={(!showReviewReturn && isFirst) || isLoading}
       >
-        Voltar
+        {showReviewReturn ? "Revisar" : "Voltar"}
       </Button>
       <Button
         type="button"
-        onClick={handleNext}
-        isLoading={isLoading && isLast}
+        onClick={onPrimaryClick}
+        isLoading={isLoading && (isLast || isReview)}
         disabled={nextDisabled}
       >
-        {nextLabel}
+        {isReview || isLast ? "Salvar" : "Próximo"}
       </Button>
     </div>
   );
@@ -318,6 +354,11 @@ export default function BudgetWizard({
       title={step?.title ?? ""}
     />
   );
+
+  const title = isEditing ? "Editar orçamento" : "Novo orçamento";
+  const subtitle = isEditing
+    ? "Altere as seções necessárias e salve"
+    : "Configure a proposta em poucos passos";
 
   if (isMobileShell) {
     return (
@@ -332,9 +373,9 @@ export default function BudgetWizard({
           >
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Novo orçamento
+                {title}
               </h2>
-              <p className="text-xs text-gray-500">Configure a proposta</p>
+              <p className="text-xs text-gray-500">{subtitle}</p>
             </div>
             {closeButton}
           </div>
@@ -368,11 +409,9 @@ export default function BudgetWizard({
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Novo orçamento
+              {title}
             </h2>
-            <p className="text-sm text-gray-500">
-              Configure a proposta em poucos passos
-            </p>
+            <p className="text-sm text-gray-500">{subtitle}</p>
           </div>
           {closeButton}
         </div>
@@ -394,8 +433,8 @@ export default function BudgetWizard({
             </div>
           ) : isDesktop && isReview ? (
             <div className="lg:sticky lg:top-4 self-start rounded-2xl border border-dashed border-gray-300 dark:border-gray-600 p-6 text-sm text-gray-500 text-center">
-              Revise o cálculo no painel à esquerda antes de seguir para o
-              cliente.
+              Use os lápis à esquerda para editar seções. Ajuste litros e valor
+              da proposta na memória de cálculo.
             </div>
           ) : null}
         </div>
