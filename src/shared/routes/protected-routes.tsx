@@ -8,6 +8,8 @@ import EventsContainer from '../../modules/protected/events/container';
 import StockContainer from '../../modules/protected/stock/container';
 import StockHistoryContainer from '../../modules/protected/stock-history/container';
 import ProductsContainer from '../../modules/protected/products/container';
+import BudgetsContainer from '../../modules/protected/budgets/container';
+import { isFeatureEnabled } from '../config/features';
 
 const ProtectedRoutes: React.FC = () => {
   return (
@@ -22,6 +24,9 @@ const ProtectedRoutes: React.FC = () => {
         <Route path="/products" element={<ProductsContainer />} />
         <Route path="/stock" element={<StockContainer />} />
         <Route path="/stock/history" element={<StockHistoryContainer />} />
+        {isFeatureEnabled("budgets") ? (
+          <Route path="/budgets" element={<BudgetsContainer />} />
+        ) : null}
         <Route path="*" element={<Navigate to="/" />} />
       </Route>
     </Routes>

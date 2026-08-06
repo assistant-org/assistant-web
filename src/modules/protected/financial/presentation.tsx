@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Card from "../../../shared/components/Card";
 import Button from "../../../shared/components/Button";
+import PageHeader from "../../../shared/components/PageHeader";
 import FormShell from "../../../shared/components/FormShell";
 import DeleteModal from "../../../shared/components/DeleteModal";
 import BottomSheet from "../../../shared/components/BottomSheet";
@@ -175,10 +176,36 @@ export default function FinancialPresentation({
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Financeiro</h1>
-        <Button onClick={() => onOpenModal()}>+ Nova Movimentação</Button>
-      </div>
+      <PageHeader
+        title="Financeiro"
+        subtitle="Acompanhe receitas, despesas e resultado"
+        filters={
+          isMobile ? (
+            <FilterButton onClick={openFilterSheet} hasActiveFilters={hasActiveFilters} />
+          ) : (
+            <FilterPopover
+              isOpen={isFilterPopoverOpen}
+              onOpenChange={handleFilterPopoverOpenChange}
+              hasActiveFilters={hasActiveFilters}
+            >
+              <TransactionFilters
+                filters={tempFilters}
+                onFilterChange={handleTempFilterChange}
+                onApply={handleApplyFilters}
+                onClearFilters={handleClearFilters}
+                hasActiveFilters={hasActiveFilters}
+                categories={categories}
+                accounts={accounts}
+                events={events}
+                eventsEnabled={eventsEnabled}
+              />
+            </FilterPopover>
+          )
+        }
+        actions={
+          <Button onClick={() => onOpenModal()}>+ Nova Movimentação</Button>
+        }
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <Card className="!p-4">
@@ -211,30 +238,6 @@ export default function FinancialPresentation({
             {formatCurrency(totals.balance)}
           </p>
         </Card>
-      </div>
-
-      <div className="flex justify-end mb-3">
-        {isMobile ? (
-          <FilterButton onClick={openFilterSheet} hasActiveFilters={hasActiveFilters} />
-        ) : (
-          <FilterPopover
-            isOpen={isFilterPopoverOpen}
-            onOpenChange={handleFilterPopoverOpenChange}
-            hasActiveFilters={hasActiveFilters}
-          >
-            <TransactionFilters
-              filters={tempFilters}
-              onFilterChange={handleTempFilterChange}
-              onApply={handleApplyFilters}
-              onClearFilters={handleClearFilters}
-              hasActiveFilters={hasActiveFilters}
-              categories={categories}
-              accounts={accounts}
-              events={events}
-              eventsEnabled={eventsEnabled}
-            />
-          </FilterPopover>
-        )}
       </div>
 
       <FilterBadges chips={filterChips} />

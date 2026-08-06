@@ -455,22 +455,29 @@ Evento corporativo
 
 # Orçamentos (Feature)
 
-Orçamentos são opcionais.
+Módulo comercial habilitado (`FEATURES.budgets`).
 
-Devem permitir:
+Fluxo wizard:
 
-* criar proposta
-* adicionar produtos
-* calcular valores
-* gerar documento futuramente
+* tipo (Totem / Kombi)
+* pessoas, duração, perfil de consumo
+* outras bebidas, sabores (produtos ativos), distância
+* extras via registry configurável
+* dados do cliente
 
-Possíveis evoluções:
+Cálculo centralizado em `BudgetCalculatorService` (UI não contém regras).
 
-* PDF
-* WhatsApp
+Total (interno) = litros×preço + km + extras + custo operacional.
+
+PDF e WhatsApp expõem apenas dados comerciais (sem memória de custo interno).
+
+Persistência em `budgets` com snapshot de auditoria (`calculated_total` vs `final_total`).
+
+Evoluções futuras:
+
 * aprovação
 * reserva de estoque
-* geração automática de venda
+* geração automática de venda/movimentação
 
 ---
 

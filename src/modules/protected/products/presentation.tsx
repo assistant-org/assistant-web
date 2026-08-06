@@ -2,6 +2,7 @@ import React from "react";
 import { IProductsPresentationProps } from "./types";
 import Card from "../../../shared/components/Card";
 import Button from "../../../shared/components/Button";
+import PageHeader from "../../../shared/components/PageHeader";
 import TableActions from "../../../shared/components/TableActions";
 import Switch from "../../../shared/components/Switch";
 import DeleteModal from "../../../shared/components/DeleteModal";
@@ -38,10 +39,11 @@ export default function ProductsPresentation({
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Produtos</h1>
-        <Button onClick={() => onOpenModal()}>+ Novo Produto</Button>
-      </div>
+      <PageHeader
+        title="Produtos"
+        subtitle="Cadastro de chopps e preços por litro"
+        actions={<Button onClick={() => onOpenModal()}>+ Novo Produto</Button>}
+      />
 
       <Card className={isMobile ? "!p-0 overflow-hidden" : ""}>
         {isMobile ? (

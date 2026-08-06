@@ -447,21 +447,21 @@ Eventos podem calcular:
 
 # Orçamentos (Feature)
 
-Orçamentos são opcionais.
+Módulo comercial (`/budgets`).
 
-Devem permitir:
+Regras:
 
-* criar proposta;
-* adicionar produtos;
-* calcular valores.
+* Totem: custo operacional interno fixo R$ 400 (não aparece no PDF).
+* Kombi: custo operacional interno R$ 160/h (não aparece no PDF).
+* Totem km: R$ 0,90/km; Kombi km: R$ 2,20/km.
+* Consumo: Casual 0,4 / Moderado 0,5 (padrão) / Alto 0,7 L/pessoa/h.
+* Outras bebidas reduz litros em 20%.
+* Sabores vêm de produtos ativos; litragem dividida igualmente; preço = `defaultUnitValue` (R$/L).
+* Extras via registry (Operador = R$ 90/h; Parceria zera operacional). Sem switch/if fixo na UI.
+* Total calculado = sabores + km + extras + operacional.
+* Valor da proposta pode ser negociado; cálculo original permanece salvo.
 
-Futuras evoluções:
-
-* gerar PDF;
-* enviar WhatsApp;
-* aprovação;
-* reserva de estoque;
-* criação automática de movimentações.
+PDF/WhatsApp: logo/nome, cliente, tipo, litros, sabores (sem R$/L), valor final, observações. Sem custos internos.
 
 ---
 

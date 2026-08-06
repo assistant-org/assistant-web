@@ -14,6 +14,7 @@ import {
   IExpenseByCategory,
 } from "./types";
 import Card from "../../../shared/components/Card";
+import PageHeader from "../../../shared/components/PageHeader";
 import LineChart from "./components/LineChart";
 import { useMediaQuery } from "../../../shared/hooks/useMediaQuery";
 import { PERIOD_OPTIONS } from "../../../shared/utils/periodRange";
@@ -182,32 +183,34 @@ export default function HomePresentation({
 
   return (
     <div>
-      <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-end sm:justify-between">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Olá, Na Estrada Chopp!
-        </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          {periodRange.startDate.split("-").reverse().join("/")} –{" "}
-          {periodRange.endDate.split("-").reverse().join("/")}
-        </p>
-      </div>
-
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-4 -mx-1 px-1">
-        {PERIOD_OPTIONS.map((opt) => (
-          <button
-            key={opt.key}
-            type="button"
-            onClick={() => onPeriodKeyChange(opt.key)}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-              periodKey === opt.key
-                ? "bg-indigo-600 text-white"
-                : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
+      <PageHeader
+        title="Olá, Na Estrada Chopp!"
+        subtitle="Visão geral do período selecionado"
+        filters={
+          <p className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+            {periodRange.startDate.split("-").reverse().join("/")} –{" "}
+            {periodRange.endDate.split("-").reverse().join("/")}
+          </p>
+        }
+        belowToolbar={
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+            {PERIOD_OPTIONS.map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => onPeriodKeyChange(opt.key)}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                  periodKey === opt.key
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
       {periodKey === "custom" && (
         <div className="flex flex-wrap gap-3 mb-4">
