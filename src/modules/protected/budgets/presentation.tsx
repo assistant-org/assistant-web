@@ -1,6 +1,7 @@
 import React from "react";
 import Button from "../../../shared/components/Button";
 import Card from "../../../shared/components/Card";
+import ListSkeleton from "../../../shared/components/ListSkeleton";
 import PageHeader from "../../../shared/components/PageHeader";
 import { getServiceTypeConfig } from "../../../shared/services/budgets/budget.config";
 import { formatCurrency, formatLiters } from "../../../shared/services/budgets/format";
@@ -99,7 +100,9 @@ export default function BudgetsPresentation({
       />
 
       {isLoading ? (
-        <p className="text-sm text-gray-500">Carregando…</p>
+        <Card className="!p-0 overflow-hidden">
+          <ListSkeleton variant="cards" rows={4} />
+        </Card>
       ) : budgets.length === 0 ? (
         <Card>
           <p className="text-sm text-gray-500 p-2">

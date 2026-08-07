@@ -11,7 +11,8 @@ export type BudgetStepKey =
   | "distance"
   | "extras"
   | "review"
-  | "client";
+  | "client"
+  | "orderReview";
 
 export interface BudgetStepDefinition {
   key: BudgetStepKey;
@@ -45,12 +46,13 @@ const FLAVOR_DISTRIBUTION_STEP: BudgetStepDefinition = {
 const BASE_AFTER_FLAVORS: BudgetStepDefinition[] = [
   { key: "distance", title: "Distância", fields: ["distanceKm"] },
   { key: "extras", title: "Extras", fields: ["extras"] },
+  { key: "review", title: "Revisão do orçamento", fields: [] },
   {
     key: "client",
     title: "Cliente",
     fields: ["clientName", "clientPhone", "clientCity", "eventDate", "notes"],
   },
-  { key: "review", title: "Revisão do orçamento", fields: [] },
+  { key: "orderReview", title: "Revisão do pedido", fields: [] },
 ];
 
 /** Dynamic steps: flavor distribution only when 2+ flavors selected. */

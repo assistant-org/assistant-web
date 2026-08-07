@@ -60,11 +60,11 @@ export default function BudgetWizard({
     [values.flavors],
   );
 
-  // Open on review when editing
+  // Open on order review (last step) when editing
   useEffect(() => {
     if (!isEditing || didInitEdit || steps.length === 0) return;
-    const reviewIdx = steps.findIndex((s) => s.key === "review");
-    setStepIndex(reviewIdx >= 0 ? reviewIdx : 0);
+    const orderIdx = steps.findIndex((s) => s.key === "orderReview");
+    setStepIndex(orderIdx >= 0 ? orderIdx : steps.length - 1);
     setDidInitEdit(true);
   }, [isEditing, didInitEdit, steps]);
 
@@ -77,7 +77,8 @@ export default function BudgetWizard({
   const step = steps[Math.min(stepIndex, steps.length - 1)];
   const isFirst = stepIndex === 0;
   const isLast = stepIndex === steps.length - 1;
-  const isReview = step?.key === "review";
+  const isCalcReview = step?.key === "review";
+  const isOrderReview = step?.key === "orderReview";
   const isFlavorDistribution = step?.key === "flavorDistribution";
 
   const percentValidation = useMemo(
@@ -297,12 +298,22 @@ export default function BudgetWizard({
         return <StepClient formMethods={formMethods} disabled={isLoading} />;
       case "review":
         return (
+          <div className="space-y-3">
+            <p className="text-sm text-center text-gray-500 dark:text-gray-400">
+              Confira a memória de cálculo. Ajuste litros e valor se necessário.
+            </p>
+            <BudgetPreview {...previewProps} allowLiterCorrection />
+          </div>
+        );
+      case "orderReview":
+        return (
           <StepReview
             values={values}
             steps={steps}
             onEditStep={goToStep}
             isEditing={isEditing}
-            {...previewProps}
+            result={calculation}
+            disabled={isLoading}
           />
         );
       default:
@@ -311,17 +322,18 @@ export default function BudgetWizard({
   };
 
   const onPrimaryClick = async () => {
-    if (isReview && !isLast) {
-      // Should not happen after reorder; still save if review
-      const valid = await trigger();
-      if (valid) onFinalize();
-      return;
-    }
     await handleNext();
   };
 
-  // When editing a section (not on review), "Revisar" returns to review
-  const showReviewReturn = isEditing && !isReview;
+  // When editing a section (not on order review), "Revisar" returns to order review
+  const showReviewReturn = isEditing && !isOrderReview;
+  const primaryLabel = isCalcReview
+    ? "Continuar para cliente"
+    : step?.key === "client"
+      ? "Continuar para revisão"
+      : isLast
+        ? "Salvar"
+        : "Próximo";
   const footer = (
     <div className="flex items-center justify-between gap-2">
       <Button
@@ -329,7 +341,7 @@ export default function BudgetWizard({
         variant="secondary"
         onClick={
           showReviewReturn
-            ? () => goToStep("review")
+            ? () => goToStep("orderReview")
             : handleBack
         }
         disabled={(!showReviewReturn && isFirst) || isLoading}
@@ -339,10 +351,10 @@ export default function BudgetWizard({
       <Button
         type="button"
         onClick={onPrimaryClick}
-        isLoading={isLoading && (isLast || isReview)}
+        isLoading={isLoading && isLast}
         disabled={nextDisabled}
       >
-        {isReview || isLast ? "Salvar" : "Próximo"}
+        {primaryLabel}
       </Button>
     </div>
   );
@@ -427,14 +439,20 @@ export default function BudgetWizard({
             </div>
           </div>
 
-          {isDesktop && !isReview ? (
+          {isDesktop && !isCalcReview && !isOrderReview ? (
             <div className="lg:sticky lg:top-4 self-start">
               <BudgetPreview {...previewProps} />
             </div>
-          ) : isDesktop && isReview ? (
+          ) : isDesktop && isCalcReview ? (
             <div className="lg:sticky lg:top-4 self-start rounded-2xl border border-dashed border-gray-300 dark:border-gray-600 p-6 text-sm text-gray-500 text-center">
-              Use os lápis à esquerda para editar seções. Ajuste litros e valor
-              da proposta na memória de cálculo.
+              Ajuste litros e valor da proposta na memória de cálculo à esquerda.
+              Em seguida informe os dados do cliente.
+            </div>
+          ) : isDesktop && isOrderReview ? (
+            <div className="lg:sticky lg:top-4 self-start rounded-2xl border border-dashed border-gray-300 dark:border-gray-600 p-6 text-sm text-gray-500 text-center">
+              {isEditing
+                ? "Use os lápis à esquerda para editar seções e salve quando concluir."
+                : "Confira o resumo do pedido e salve a proposta."}
             </div>
           ) : null}
         </div>
