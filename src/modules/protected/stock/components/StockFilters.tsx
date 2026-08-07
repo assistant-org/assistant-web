@@ -6,7 +6,7 @@ import { StockBatchStatus } from "../../../../shared/services/stock/types";
 import { IStockFilters } from "../types";
 
 const inputBaseClasses =
-  "block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:border-indigo-500 focus:ring-indigo-500";
+  "block w-full min-h-11 rounded-md border px-3 py-2 text-base shadow-sm focus:outline-none sm:min-h-0 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:border-indigo-500 focus:ring-indigo-500";
 
 export const STATUS_FILTER_OPTIONS = [
   { value: StockBatchStatus.ACTIVE, label: "Ativos" },

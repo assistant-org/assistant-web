@@ -1,4 +1,4 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 import { requiredSelectString } from "../../utils/zodHelpers";
 import { StockMovementDirection, StockMovementType } from "./types";
 
@@ -11,6 +11,8 @@ export const stockLineItemSchema = z.object({
   quantity: z
     .number({ error: "Quantidade é obrigatória" })
     .min(0.01, "Quantidade deve ser maior que zero"),
+  /** Snapshot from selected batch — used to validate EXIT qty client-side. */
+  availableQuantity: z.number().optional().nullable(),
   unitValue: z
     .number({ error: "Valor unitário é obrigatório" })
     .min(0, "Valor unitário não pode ser negativo")
@@ -66,6 +68,18 @@ export const outgoingMovementSchema = z
         });
       } else {
         batchIds.add(item.batchId);
+      }
+
+      if (
+        item.availableQuantity != null &&
+        Number.isFinite(item.availableQuantity) &&
+        item.quantity > item.availableQuantity
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Quantidade excede o disponível (${item.availableQuantity.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} L)`,
+          path: ["items", i, "quantity"],
+        });
       }
     });
   });

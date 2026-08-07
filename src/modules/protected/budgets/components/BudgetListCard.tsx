@@ -2,6 +2,7 @@ import React from "react";
 import {
   CheckCircle2,
   FileDown,
+  Image,
   MessageCircle,
   Pencil,
   Trash2,
@@ -12,7 +13,11 @@ import {
   formatCurrency,
   formatLiters,
 } from "../../../../shared/services/budgets/format";
-import { downloadBudgetProposalPdf } from "../../../../shared/services/budgets/pdf/budgetProposalPdf";
+import {
+  downloadBudgetProposalPdf,
+  downloadBudgetProposalPng,
+  toProposalPdfInput,
+} from "../../../../shared/services/budgets/pdf/budgetProposalPdf";
 import { Budget } from "../../../../shared/services/budgets/types";
 import { buildWhatsAppLink } from "../../../../shared/services/budgets/whatsapp/buildWhatsAppLink";
 import { formatDateBR } from "../../../../shared/utils/formatDate";
@@ -47,17 +52,11 @@ export default function BudgetListCard({
   const isOpen = budget.status !== "concluded";
 
   const handlePdf = async () => {
-    await downloadBudgetProposalPdf({
-      clientName: budget.clientName,
-      clientPhone: budget.clientPhone,
-      clientCity: budget.clientCity,
-      notes: budget.notes,
-      serviceType: budget.serviceType,
-      calculation: {
-        ...budget.calculation,
-        finalTotal: budget.finalTotal,
-      },
-    });
+    await downloadBudgetProposalPdf(toProposalPdfInput(budget));
+  };
+
+  const handlePng = async () => {
+    await downloadBudgetProposalPng(toProposalPdfInput(budget));
   };
 
   const handleWhatsApp = () => {
@@ -122,6 +121,12 @@ export default function BudgetListCard({
               label: "Baixar PDF",
               icon: <FileDown className="h-4 w-4" />,
               onClick: () => void handlePdf(),
+            },
+            {
+              key: "png",
+              label: "Baixar imagem",
+              icon: <Image className="h-4 w-4" />,
+              onClick: () => void handlePng(),
             },
             {
               key: "whatsapp",

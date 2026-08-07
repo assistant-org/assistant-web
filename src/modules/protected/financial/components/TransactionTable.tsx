@@ -1,5 +1,6 @@
 import React from "react";
-import TableActions from "../../../../shared/components/TableActions";
+import { Eye, Pencil, Trash2 } from "lucide-react";
+import ActionMenu from "../../../../shared/components/ActionMenu";
 import {
   TransactionType,
   TransactionStatus,
@@ -46,7 +47,6 @@ const TransactionTable: React.FC<ITransactionListProps> = ({
   onDelete,
   onViewDetails,
   getCategoryName,
-  getAccountName,
 }) => {
   return (
     <div className="overflow-x-auto">
@@ -97,14 +97,17 @@ const TransactionTable: React.FC<ITransactionListProps> = ({
                     {badge.label}
                   </span>
                   {isCancelled && (
-                    <span className="ml-2 text-xs text-gray-400 italic">Cancelada</span>
+                    <span className="ml-2 text-xs text-gray-400 italic">
+                      Cancelada
+                    </span>
                   )}
                 </td>
                 <td className="px-6 py-4">{description}</td>
                 <td className="px-6 py-4">
                   {transaction.paymentMethod
-                    ? PAYMENT_METHOD_LABELS[transaction.paymentMethod as PaymentMethod] ||
-                      transaction.paymentMethod
+                    ? PAYMENT_METHOD_LABELS[
+                        transaction.paymentMethod as PaymentMethod
+                      ] || transaction.paymentMethod
                     : "-"}
                 </td>
                 <td
@@ -116,10 +119,28 @@ const TransactionTable: React.FC<ITransactionListProps> = ({
                   {formatCurrency(transaction.value)}
                 </td>
                 <td className="px-6 py-4 text-center">
-                  <TableActions
-                    onViewDetails={() => onViewDetails(transaction)}
-                    onEdit={() => onEdit(transaction)}
-                    onDelete={() => onDelete(transaction.id)}
+                  <ActionMenu
+                    items={[
+                      {
+                        key: "details",
+                        label: "Detalhes",
+                        icon: <Eye className="h-4 w-4" />,
+                        onClick: () => onViewDetails(transaction),
+                      },
+                      {
+                        key: "edit",
+                        label: "Editar",
+                        icon: <Pencil className="h-4 w-4" />,
+                        onClick: () => onEdit(transaction),
+                      },
+                      {
+                        key: "delete",
+                        label: "Excluir",
+                        icon: <Trash2 className="h-4 w-4" />,
+                        onClick: () => onDelete(transaction.id),
+                        danger: true,
+                      },
+                    ]}
                   />
                 </td>
               </tr>

@@ -331,6 +331,17 @@ export class StockBatchesService {
 
   async delete(id: string): Promise<ApiResponse<null>> {
     try {
+      // App-level cascade: every batch has movements (ENTRY at least).
+      // Works even if DB FK lacks ON DELETE CASCADE.
+      const { error: movementsError } = await supabase
+        .from("stock_movements")
+        .delete()
+        .eq("batch_id", id);
+
+      if (movementsError) {
+        return { data: null, error: movementsError.message };
+      }
+
       const { error } = await supabase
         .from(this.tableName)
         .delete()

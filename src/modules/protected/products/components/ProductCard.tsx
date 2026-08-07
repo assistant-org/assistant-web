@@ -1,5 +1,6 @@
 import React from "react";
 import { Pencil, Trash2 } from "lucide-react";
+import ActionMenu from "../../../../shared/components/ActionMenu";
 import Switch from "../../../../shared/components/Switch";
 import { Product } from "../../../../shared/services/products/types";
 
@@ -27,7 +28,10 @@ export default function ProductCard({
   return (
     <div className="flex flex-col divide-y divide-gray-200 dark:divide-gray-700">
       {products.map((product) => (
-        <div key={product.id} className="px-4 py-4 flex items-start justify-between gap-3">
+        <div
+          key={product.id}
+          className="px-4 py-4 flex items-start justify-between gap-3"
+        >
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
               {product.name}
@@ -49,23 +53,24 @@ export default function ProductCard({
               {product.active ? "Ativo" : "Inativo"}
             </span>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <button
-              type="button"
-              onClick={() => onEdit(product)}
-              className="text-indigo-600 hover:text-indigo-800 dark:text-zinc-400 dark:hover:text-white p-1 -m-1"
-              aria-label="Editar"
-            >
-              <Pencil className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(product)}
-              className="text-red-600 hover:text-red-800 dark:text-zinc-400 dark:hover:text-white p-1 -m-1"
-              aria-label="Excluir"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <ActionMenu
+              items={[
+                {
+                  key: "edit",
+                  label: "Editar",
+                  icon: <Pencil className="h-4 w-4" />,
+                  onClick: () => onEdit(product),
+                },
+                {
+                  key: "delete",
+                  label: "Excluir",
+                  icon: <Trash2 className="h-4 w-4" />,
+                  onClick: () => onDelete(product),
+                  danger: true,
+                },
+              ]}
+            />
             <Switch
               checked={product.active}
               onChange={() => onToggleActive(product)}

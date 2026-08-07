@@ -24,15 +24,25 @@ export default function StepIncomeExpenseDetails({
   const {
     register,
     control,
+    watch,
     formState: { errors },
   } = formMethods;
 
   const isIncome = type === TransactionType.INCOME;
+  const currentCategoryId = watch("categoryId");
 
   const filteredCategories = useMemo(() => {
     const wanted = isIncome ? CategoryType.INCOME : CategoryType.EXPENSE;
-    return categories.filter((c) => c.type === wanted);
-  }, [categories, isIncome]);
+    return categories.filter((c) => {
+      if (c.type !== wanted) return false;
+      if (c.status === true) return true;
+      // Keep inactive category if it's the one currently selected (edit flow)
+      return (
+        currentCategoryId != null &&
+        String(c.id) === String(currentCategoryId)
+      );
+    });
+  }, [categories, isIncome, currentCategoryId]);
 
   return (
     <div className="grid grid-cols-1 gap-5">

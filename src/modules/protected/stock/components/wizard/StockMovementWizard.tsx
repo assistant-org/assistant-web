@@ -64,8 +64,9 @@ export default function StockMovementWizard({
       {
         productId: "",
         batchId: null,
-        quantity: 0,
+        quantity: undefined as unknown as number,
         unitValue: newType === StockMovementType.ENTRY ? 0 : null,
+        availableQuantity: null,
       },
     ]);
   };

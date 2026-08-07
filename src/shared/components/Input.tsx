@@ -13,8 +13,15 @@ const Input: React.FC<InputProps> = ({
   id,
   register,
   error,
+  type,
+  className,
   ...props
 }) => {
+  const isDate = type === "date";
+  const baseClass = isDate
+    ? "block w-full min-h-11 rounded-md border px-3 py-2 text-base placeholder-gray-400 shadow-sm focus:outline-none sm:min-h-0 sm:text-sm"
+    : "block w-full appearance-none rounded-md border px-3 py-2 placeholder-gray-400 shadow-sm focus:outline-none sm:text-sm";
+
   return (
     <div>
       <label
@@ -26,13 +33,14 @@ const Input: React.FC<InputProps> = ({
       <div className="mt-1">
         <input
           id={id}
+          type={type}
           {...register}
           {...props}
-          className={`block w-full appearance-none rounded-md border px-3 py-2 placeholder-gray-400 shadow-sm focus:outline-none sm:text-sm ${
+          className={`${baseClass} ${
             error
               ? "border-red-500 dark:bg-gray-700 focus:border-red-500 focus:ring-red-500"
               : "border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:border-indigo-500 focus:ring-indigo-500"
-          }`}
+          } ${className ?? ""}`}
         />
         {error && (
           <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>

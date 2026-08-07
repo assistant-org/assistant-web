@@ -1,5 +1,6 @@
 import React from "react";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
+import ActionMenu from "../../../../shared/components/ActionMenu";
 import Switch from "../../../../shared/components/Switch";
 import { CATEGORY_TYPE_LABELS, ICategory } from "../types";
 
@@ -7,6 +8,7 @@ interface CategoryCardProps {
   categories: ICategory[];
   onEdit: (category: ICategory) => void;
   onToggleStatus: (id: string) => void;
+  onDelete: (category: ICategory) => void;
 }
 
 const StatusBadge: React.FC<{ status: boolean }> = ({ status }) => (
@@ -23,6 +25,7 @@ export default function CategoryCard({
   categories,
   onEdit,
   onToggleStatus,
+  onDelete,
 }: CategoryCardProps) {
   if (categories.length === 0) {
     return (
@@ -35,7 +38,10 @@ export default function CategoryCard({
   return (
     <div className="flex flex-col divide-y divide-gray-200 dark:divide-gray-700">
       {categories.map((category) => (
-        <div key={category.id} className="px-4 py-4 flex items-start justify-between gap-3">
+        <div
+          key={category.id}
+          className="px-4 py-4 flex items-start justify-between gap-3"
+        >
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               {category.color && (
@@ -55,15 +61,24 @@ export default function CategoryCard({
               <StatusBadge status={category.status} />
             </div>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <button
-              type="button"
-              onClick={() => onEdit(category)}
-              className="text-indigo-600 hover:text-indigo-800 dark:text-zinc-400 dark:hover:text-white p-1 -m-1"
-              aria-label="Editar"
-            >
-              <Pencil className="w-4 h-4" />
-            </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <ActionMenu
+              items={[
+                {
+                  key: "edit",
+                  label: "Editar",
+                  icon: <Pencil className="h-4 w-4" />,
+                  onClick: () => onEdit(category),
+                },
+                {
+                  key: "delete",
+                  label: "Excluir",
+                  icon: <Trash2 className="h-4 w-4" />,
+                  onClick: () => onDelete(category),
+                  danger: true,
+                },
+              ]}
+            />
             <Switch
               checked={category.status}
               onChange={() => onToggleStatus(category.id)}

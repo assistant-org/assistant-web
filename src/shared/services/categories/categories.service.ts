@@ -1,11 +1,31 @@
 import { supabase } from "../../config";
-import { CreateCategoryRequest, UpdateCategoryRequest } from "./types";
+import { Category, CreateCategoryRequest, UpdateCategoryRequest } from "./types";
 import {
   CategoryResponse,
   CategoriesListResponse,
   PaginatedCategoriesListResponse,
   ApiResponse,
 } from "./models/response/response";
+
+function mapCategoryRow(data: Record<string, unknown>): Category {
+  return {
+    id: String(data.id),
+    name: (data.name as string) || "",
+    description: (data.description as string) || undefined,
+    color: (data.color as string) || undefined,
+    icon: (data.icon as string) || undefined,
+    type: (data.type as string) || "",
+    status: Boolean(data.status),
+    allowsSingleEvent:
+      data.allows_single_event != null
+        ? Boolean(data.allows_single_event)
+        : data.allowsSingleEvent != null
+          ? Boolean(data.allowsSingleEvent)
+          : undefined,
+    created_at: data.created_at as string | undefined,
+    updated_at: data.updated_at as string | undefined,
+  };
+}
 
 export class CategoriesService {
   private tableName = "categories";
@@ -27,7 +47,7 @@ export class CategoriesService {
         return { data: null, error: error.message };
       }
 
-      return { data, error: null };
+      return { data: mapCategoryRow(data), error: null };
     } catch (err) {
       return { data: null, error: "Erro interno do servidor" };
     }
@@ -47,7 +67,12 @@ export class CategoriesService {
         return { data: null, error: error.message };
       }
 
-      return { data, error: null };
+      return {
+        data: (data || []).map((row) =>
+          mapCategoryRow(row as Record<string, unknown>),
+        ),
+        error: null,
+      };
     } catch (err) {
       return { data: null, error: "Erro interno do servidor" };
     }
@@ -79,7 +104,9 @@ export class CategoriesService {
 
       return {
         data: {
-          items: data || [],
+          items: (data || []).map((row) =>
+            mapCategoryRow(row as Record<string, unknown>),
+          ),
           total: count || 0,
           page,
           pageSize,
@@ -123,7 +150,7 @@ export class CategoriesService {
         return { data: null, error: error.message };
       }
 
-      return { data, error: null };
+      return { data: mapCategoryRow(data), error: null };
     } catch (err) {
       return { data: null, error: "Erro interno do servidor" };
     }
@@ -144,7 +171,12 @@ export class CategoriesService {
         return { data: null, error: error.message };
       }
 
-      return { data, error: null };
+      return {
+        data: (data || []).map((row) =>
+          mapCategoryRow(row as Record<string, unknown>),
+        ),
+        error: null,
+      };
     } catch (err) {
       return { data: null, error: "Erro interno do servidor" };
     }
@@ -169,7 +201,7 @@ export class CategoriesService {
         return { data: null, error: error.message };
       }
 
-      return { data, error: null };
+      return { data: mapCategoryRow(data), error: null };
     } catch (err) {
       return { data: null, error: "Erro interno do servidor" };
     }

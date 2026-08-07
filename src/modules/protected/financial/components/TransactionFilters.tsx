@@ -9,7 +9,7 @@ import {
 import { ITransactionFiltersProps, IFinancialFilters } from "../types";
 
 const inputBaseClasses =
-  "block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:border-indigo-500 focus:ring-indigo-500";
+  "block w-full min-h-11 rounded-md border px-3 py-2 text-base shadow-sm focus:outline-none sm:min-h-0 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:border-indigo-500 focus:ring-indigo-500";
 
 export const TYPE_OPTIONS = [
   { value: TransactionType.INCOME, label: "Receita" },
@@ -52,7 +52,10 @@ const TransactionFilters: React.FC<ITransactionFiltersProps> = ({
 
   const periodBadge = filters.startDate || filters.endDate ? "Definido" : null;
   const typeBadge = TYPE_OPTIONS.find((o) => o.value === filters.type)?.label ?? null;
-  const categoryBadge = categories.find((c) => c.id === filters.categoryId)?.name ?? null;
+  const activeCategories = categories.filter((c) => c.status === true);
+  const categoryBadge =
+    categories.find((c) => String(c.id) === String(filters.categoryId))?.name ??
+    null;
   const accountBadge = accounts.find((a) => a.id === filters.accountId)?.name ?? null;
   const originBadge = ORIGIN_OPTIONS.find((o) => o.value === filters.origin)?.label ?? null;
   const eventBadge = events.find((e) => e.id === filters.eventId)?.name ?? null;
@@ -119,7 +122,7 @@ const TransactionFilters: React.FC<ITransactionFiltersProps> = ({
             className={inputBaseClasses}
           >
             <option value="">Todas</option>
-            {categories.map((cat) => (
+            {activeCategories.map((cat) => (
               <option key={cat.id} value={cat.id}>
                 {cat.name}
               </option>

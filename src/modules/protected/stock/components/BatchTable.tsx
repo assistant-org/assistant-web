@@ -1,5 +1,6 @@
 import React from "react";
-import TableActions from "../../../../shared/components/TableActions";
+import { Eye, Pencil, Trash2 } from "lucide-react";
+import ActionMenu from "../../../../shared/components/ActionMenu";
 import { StockBatch, StockBatchStatus } from "../../../../shared/services/stock/types";
 import { formatDateBR } from "../../../../shared/utils/formatDate";
 
@@ -11,9 +12,15 @@ interface BatchTableProps {
   batches: StockBatch[];
   onViewDetails: (batch: StockBatch) => void;
   onEdit: (batch: StockBatch) => void;
+  onDelete: (batch: StockBatch) => void;
 }
 
-export default function BatchTable({ batches, onViewDetails, onEdit }: BatchTableProps) {
+export default function BatchTable({
+  batches,
+  onViewDetails,
+  onEdit,
+  onDelete,
+}: BatchTableProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
@@ -63,13 +70,34 @@ export default function BatchTable({ batches, onViewDetails, onEdit }: BatchTabl
                         : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
                     }`}
                   >
-                    {batch.status === StockBatchStatus.ACTIVE ? "Ativo" : "Encerrado"}
+                    {batch.status === StockBatchStatus.ACTIVE
+                      ? "Ativo"
+                      : "Encerrado"}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-center">
-                  <TableActions
-                    onViewDetails={() => onViewDetails(batch)}
-                    onEdit={() => onEdit(batch)}
+                  <ActionMenu
+                    items={[
+                      {
+                        key: "details",
+                        label: "Detalhes",
+                        icon: <Eye className="h-4 w-4" />,
+                        onClick: () => onViewDetails(batch),
+                      },
+                      {
+                        key: "edit",
+                        label: "Editar",
+                        icon: <Pencil className="h-4 w-4" />,
+                        onClick: () => onEdit(batch),
+                      },
+                      {
+                        key: "delete",
+                        label: "Excluir",
+                        icon: <Trash2 className="h-4 w-4" />,
+                        onClick: () => onDelete(batch),
+                        danger: true,
+                      },
+                    ]}
                   />
                 </td>
               </tr>
