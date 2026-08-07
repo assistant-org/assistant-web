@@ -1,15 +1,17 @@
 import React from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { IProductsPresentationProps } from "./types";
 import Card from "../../../shared/components/Card";
 import Button from "../../../shared/components/Button";
 import PageHeader from "../../../shared/components/PageHeader";
-import TableActions from "../../../shared/components/TableActions";
+import ActionMenu from "../../../shared/components/ActionMenu";
 import Switch from "../../../shared/components/Switch";
 import DeleteModal from "../../../shared/components/DeleteModal";
 import ProductForm from "./components/ProductForm";
 import ProductCard from "./components/ProductCard";
 import FormShell from "../../../shared/components/FormShell";
 import PaginationControls from "../../../shared/components/PaginationControls";
+import ListSkeleton from "../../../shared/components/ListSkeleton";
 import { useMediaQuery } from "../../../shared/hooks/useMediaQuery";
 
 export default function ProductsPresentation({
@@ -21,6 +23,7 @@ export default function ProductsPresentation({
   formMethods,
   onSave,
   isLoading,
+  isListLoading,
   onToggleActive,
   onDelete,
   isDeleteModalOpen,
@@ -46,7 +49,13 @@ export default function ProductsPresentation({
       />
 
       <Card className={isMobile ? "!p-0 overflow-hidden" : ""}>
-        {isMobile ? (
+        {isListLoading ? (
+          <ListSkeleton
+            variant={isMobile ? "cards" : "table"}
+            rows={5}
+            columns={4}
+          />
+        ) : isMobile ? (
           <ProductCard
             products={products}
             onEdit={onOpenModal}
@@ -105,10 +114,23 @@ export default function ProductsPresentation({
                       </span>
                     </td>
                       <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center space-x-4">
-                          <TableActions
-                            onEdit={() => onOpenModal(product)}
-                            onDelete={() => onDelete(product)}
+                        <div className="flex items-center justify-center gap-2">
+                          <ActionMenu
+                            items={[
+                              {
+                                key: "edit",
+                                label: "Editar",
+                                icon: <Pencil className="h-4 w-4" />,
+                                onClick: () => onOpenModal(product),
+                              },
+                              {
+                                key: "delete",
+                                label: "Excluir",
+                                icon: <Trash2 className="h-4 w-4" />,
+                                onClick: () => onDelete(product),
+                                danger: true,
+                              },
+                            ]}
                           />
                           <Switch
                             checked={product.active}

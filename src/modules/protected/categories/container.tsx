@@ -25,6 +25,11 @@ export default function CategoriesContainer() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ICategory | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<ICategory | null>(
+    null,
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
   const { success, error: toastError } = useToast();
 
   const fetchCategories = useCallback(
@@ -143,16 +148,47 @@ export default function CategoriesContainer() {
     }
   };
 
+  const handleOpenDelete = (category: ICategory) => {
+    setCategoryToDelete(category);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCloseDelete = () => {
+    setIsDeleteModalOpen(false);
+    setCategoryToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!categoryToDelete) return;
+    setIsDeleting(true);
+    const result = await categoriesService.delete(categoryToDelete.id);
+    setIsDeleting(false);
+    if (result.error) {
+      toastError(result.error);
+      return;
+    }
+    handleCloseDelete();
+    list.reload();
+    success("Categoria excluída com sucesso!");
+  };
+
   const presentationProps: ICategoriesPresentationProps = {
     categories: list.items,
     onOpenModal: handleOpenModal,
     onToggleStatus: handleToggleStatus,
+    onDelete: handleOpenDelete,
     isModalOpen,
     onCloseModal: handleCloseModal,
     editingCategory,
     formMethods,
     onSave: handleSaveCategory,
-    isLoading: list.loading || isSaving,
+    isLoading: isSaving,
+    isListLoading: list.loading,
+    isDeleteModalOpen,
+    categoryToDelete,
+    onCloseDelete: handleCloseDelete,
+    onConfirmDelete: handleConfirmDelete,
+    isDeleting,
     page: list.page,
     pageSize: list.pageSize,
     totalItems: list.total,

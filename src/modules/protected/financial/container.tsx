@@ -154,16 +154,18 @@ export default function FinancialContainer() {
 
   const getCategoryName = useCallback(
     (id?: string | null) => {
-      if (!id) return "-";
-      return categories.find((c) => c.id === id)?.name || id;
+      if (!id) return "—";
+      return (
+        categories.find((c) => String(c.id) === String(id))?.name || "—"
+      );
     },
     [categories],
   );
 
   const getAccountName = useCallback(
     (id?: string | null) => {
-      if (!id) return "-";
-      return accounts.find((a) => a.id === id)?.name || id;
+      if (!id) return "—";
+      return accounts.find((a) => String(a.id) === String(id))?.name || "—";
     },
     [accounts],
   );
@@ -171,7 +173,7 @@ export default function FinancialContainer() {
   const getEventName = useCallback(
     (id?: string | null) => {
       if (!id) return null;
-      return events.find((e) => e.id === id)?.name || id;
+      return events.find((e) => String(e.id) === String(id))?.name || null;
     },
     [events],
   );
@@ -292,7 +294,8 @@ export default function FinancialContainer() {
     onCloseDetails: handleCloseDetails,
     formMethods,
     onSave: handleSaveTransaction,
-    isLoading: list.loading || isSaving,
+    isLoading: isSaving,
+    isListLoading: list.loading,
     categories,
     accounts,
     events,

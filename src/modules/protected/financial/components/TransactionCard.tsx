@@ -1,9 +1,17 @@
 import React from "react";
 import { Eye, Pencil, Trash2 } from "lucide-react";
-import { TransactionType, TransactionStatus } from "../../../../shared/services/transactions/types";
+import ActionMenu from "../../../../shared/components/ActionMenu";
+import {
+  TransactionStatus,
+} from "../../../../shared/services/transactions/types";
 import { formatDateBR } from "../../../../shared/utils/formatDate";
 import { ITransactionListProps } from "../types";
-import { TYPE_BADGE, VALUE_CLASSES, VALUE_SIGN, formatCurrency } from "./TransactionTable";
+import {
+  TYPE_BADGE,
+  VALUE_CLASSES,
+  VALUE_SIGN,
+  formatCurrency,
+} from "./TransactionTable";
 
 const TransactionCard: React.FC<ITransactionListProps> = ({
   transactions,
@@ -11,7 +19,6 @@ const TransactionCard: React.FC<ITransactionListProps> = ({
   onDelete,
   onViewDetails,
   getCategoryName,
-  getAccountName,
 }) => {
   if (transactions.length === 0) {
     return (
@@ -30,16 +37,16 @@ const TransactionCard: React.FC<ITransactionListProps> = ({
           transaction.category || getCategoryName(transaction.categoryId);
 
         return (
-          <button
+          <div
             key={transaction.id}
-            type="button"
-            onClick={() => onViewDetails(transaction)}
-            className={`w-full text-left px-4 py-4 active:bg-gray-50 dark:active:bg-gray-700/50 transition-colors ${
-              isCancelled ? "opacity-50" : ""
-            }`}
+            className={`w-full px-4 py-4 ${isCancelled ? "opacity-50" : ""}`}
           >
             <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
+              <button
+                type="button"
+                onClick={() => onViewDetails(transaction)}
+                className="min-w-0 flex-1 text-left active:bg-gray-50 dark:active:bg-gray-700/50 rounded-md -m-1 p-1"
+              >
                 <div className="flex items-center gap-2 flex-wrap">
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.className}`}
@@ -47,7 +54,9 @@ const TransactionCard: React.FC<ITransactionListProps> = ({
                     {badge.label}
                   </span>
                   {isCancelled && (
-                    <span className="text-xs text-gray-400 italic">Cancelada</span>
+                    <span className="text-xs text-gray-400 italic">
+                      Cancelada
+                    </span>
                   )}
                 </div>
                 <p className="mt-1.5 text-sm font-medium text-gray-900 dark:text-white truncate">
@@ -56,7 +65,7 @@ const TransactionCard: React.FC<ITransactionListProps> = ({
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                   {formatDateBR(transaction.date)}
                 </p>
-              </div>
+              </button>
               <div className="flex flex-col items-end gap-2 shrink-0">
                 <span
                   className={`text-base font-semibold ${VALUE_CLASSES[transaction.type]} ${
@@ -66,31 +75,32 @@ const TransactionCard: React.FC<ITransactionListProps> = ({
                   {VALUE_SIGN[transaction.type]}
                   {formatCurrency(transaction.value)}
                 </span>
-                <div
-                  className="flex items-center gap-3"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    type="button"
-                    onClick={() => onEdit(transaction)}
-                    className="text-indigo-600 hover:text-indigo-800 dark:text-zinc-400 dark:hover:text-white p-1 -m-1"
-                    aria-label="Editar"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDelete(transaction.id)}
-                    className="text-red-600 hover:text-red-800 dark:text-zinc-400 dark:hover:text-white p-1 -m-1"
-                    aria-label="Excluir"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  <Eye className="w-4 h-4 text-gray-300 dark:text-gray-600" />
-                </div>
+                <ActionMenu
+                  items={[
+                    {
+                      key: "details",
+                      label: "Detalhes",
+                      icon: <Eye className="h-4 w-4" />,
+                      onClick: () => onViewDetails(transaction),
+                    },
+                    {
+                      key: "edit",
+                      label: "Editar",
+                      icon: <Pencil className="h-4 w-4" />,
+                      onClick: () => onEdit(transaction),
+                    },
+                    {
+                      key: "delete",
+                      label: "Excluir",
+                      icon: <Trash2 className="h-4 w-4" />,
+                      onClick: () => onDelete(transaction.id),
+                      danger: true,
+                    },
+                  ]}
+                />
               </div>
             </div>
-          </button>
+          </div>
         );
       })}
     </div>

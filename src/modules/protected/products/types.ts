@@ -12,6 +12,7 @@ export interface IProductsPresentationProps {
   formMethods: UseFormReturn<ProductFormSchema>;
   onSave: (data: ProductFormSchema) => void;
   isLoading: boolean;
+  isListLoading: boolean;
   onToggleActive: (product: Product) => void;
   onDelete: (product: Product) => void;
   isDeleteModalOpen: boolean;

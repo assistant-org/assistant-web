@@ -1,5 +1,6 @@
 import React from "react";
-import { Eye, Pencil } from "lucide-react";
+import { Eye, Pencil, Trash2 } from "lucide-react";
+import ActionMenu from "../../../../shared/components/ActionMenu";
 import { StockBatch, StockBatchStatus } from "../../../../shared/services/stock/types";
 import { formatDateBR } from "../../../../shared/utils/formatDate";
 
@@ -11,9 +12,15 @@ interface BatchCardProps {
   batches: StockBatch[];
   onViewDetails: (batch: StockBatch) => void;
   onEdit: (batch: StockBatch) => void;
+  onDelete: (batch: StockBatch) => void;
 }
 
-export default function BatchCard({ batches, onViewDetails, onEdit }: BatchCardProps) {
+export default function BatchCard({
+  batches,
+  onViewDetails,
+  onEdit,
+  onDelete,
+}: BatchCardProps) {
   if (batches.length === 0) {
     return (
       <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">
@@ -25,7 +32,10 @@ export default function BatchCard({ batches, onViewDetails, onEdit }: BatchCardP
   return (
     <div className="divide-y divide-gray-200 dark:divide-gray-700">
       {batches.map((batch) => (
-        <div key={batch.id} className="p-4 flex items-start justify-between gap-3">
+        <div
+          key={batch.id}
+          className="p-4 flex items-start justify-between gap-3"
+        >
           <div className="min-w-0 flex-1">
             <p className="font-medium text-gray-900 dark:text-white truncate">
               {batch.productName || batch.productId}
@@ -52,28 +62,35 @@ export default function BatchCard({ batches, onViewDetails, onEdit }: BatchCardP
                     : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
                 }`}
               >
-                {batch.status === StockBatchStatus.ACTIVE ? "Ativo" : "Encerrado"}
+                {batch.status === StockBatchStatus.ACTIVE
+                  ? "Ativo"
+                  : "Encerrado"}
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={() => onViewDetails(batch)}
-              className="text-blue-600 hover:text-blue-800 dark:text-zinc-400 p-1"
-              title="Detalhes"
-            >
-              <Eye className="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onEdit(batch)}
-              className="text-indigo-600 hover:text-indigo-800 dark:text-zinc-400 p-1"
-              title="Editar"
-            >
-              <Pencil className="w-5 h-5" />
-            </button>
-          </div>
+          <ActionMenu
+            items={[
+              {
+                key: "details",
+                label: "Detalhes",
+                icon: <Eye className="h-4 w-4" />,
+                onClick: () => onViewDetails(batch),
+              },
+              {
+                key: "edit",
+                label: "Editar",
+                icon: <Pencil className="h-4 w-4" />,
+                onClick: () => onEdit(batch),
+              },
+              {
+                key: "delete",
+                label: "Excluir",
+                icon: <Trash2 className="h-4 w-4" />,
+                onClick: () => onDelete(batch),
+                danger: true,
+              },
+            ]}
+          />
         </div>
       ))}
     </div>

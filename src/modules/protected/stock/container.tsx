@@ -34,7 +34,15 @@ function emptyForm(): StockFormValues {
     type: StockMovementType.ENTRY,
     mode: "individual",
     eventId: "",
-    items: [{ productId: "", batchId: null, quantity: 0, unitValue: 0 }],
+    items: [
+      {
+        productId: "",
+        batchId: null,
+        quantity: undefined as unknown as number,
+        unitValue: 0,
+        availableQuantity: null,
+      },
+    ],
     date: todayISODate(),
     entryDate: todayISODate(),
     expiryDate: null,
@@ -55,6 +63,11 @@ export default function StockContainer() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeletingBatch, setIsDeletingBatch] = useState(false);
+  const [sellerNotifyOpen, setSellerNotifyOpen] = useState(false);
+  const [sellerNotifyLines, setSellerNotifyLines] = useState<
+    { productName: string; quantity: number }[]
+  >([]);
+  const [sellerNotifyDate, setSellerNotifyDate] = useState<string | null>(null);
 
   const { success, error: toastError } = useToast();
 
@@ -233,6 +246,19 @@ export default function StockContainer() {
           ? "Movimentação em lote registrada com sucesso!"
           : "Movimentação registrada com sucesso!",
       );
+
+      if (data.type === StockMovementType.ENTRY) {
+        setSellerNotifyLines(
+          items.map((item) => ({
+            productName:
+              products.find((p) => p.id === item.productId)?.name ||
+              "Produto",
+            quantity: item.quantity,
+          })),
+        );
+        setSellerNotifyDate(data.entryDate || todayISODate());
+        setSellerNotifyOpen(true);
+      }
     } catch (err: unknown) {
       toastError(err instanceof Error ? err.message : "Erro interno");
     }
@@ -307,11 +333,19 @@ export default function StockContainer() {
     },
     onSaveBatchEdit: handleSaveBatchEdit,
     isDeleteModalOpen,
-    onOpenDelete: () => setIsDeleteModalOpen(true),
+    onOpenDelete: (batch: StockBatch) => {
+      setSelectedBatch(batch);
+      setIsDeleteModalOpen(true);
+    },
     onCloseDelete: () => setIsDeleteModalOpen(false),
     onConfirmDelete: handleConfirmDeleteBatch,
     isDeletingBatch,
+    sellerNotifyOpen,
+    sellerNotifyLines,
+    sellerNotifyDate,
+    onCloseSellerNotify: () => setSellerNotifyOpen(false),
     isLoading: list.loading,
+    isListLoading: list.loading,
     page: list.page,
     pageSize: list.pageSize,
     totalItems: list.total,

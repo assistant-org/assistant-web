@@ -24,12 +24,19 @@ export interface IEvent {
 export interface IEventsPresentationProps {
   events: IEvent[];
   onOpenModal: (event?: IEvent) => void;
+  onDelete: (event: IEvent) => void;
   isModalOpen: boolean;
   onCloseModal: () => void;
   editingEvent: IEvent | null;
   formMethods: UseFormReturn<EventFormSchema>;
   onSave: (data: EventFormSchema) => void;
   isLoading: boolean;
+  isListLoading: boolean;
+  isDeleteModalOpen: boolean;
+  eventToDelete: IEvent | null;
+  onCloseDelete: () => void;
+  onConfirmDelete: () => void;
+  isDeleting: boolean;
   page: number;
   pageSize: PageSize;
   totalItems: number;

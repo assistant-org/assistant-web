@@ -10,6 +10,7 @@ import FilterBadges, { FilterBadgeChip } from "../../../shared/components/filter
 import FormShell from "../../../shared/components/FormShell";
 import DeleteModal from "../../../shared/components/DeleteModal";
 import PaginationControls from "../../../shared/components/PaginationControls";
+import ListSkeleton from "../../../shared/components/ListSkeleton";
 import { useMediaQuery } from "../../../shared/hooks/useMediaQuery";
 import { StockBatchStatus } from "../../../shared/services/stock/types";
 import { IStockFilters, IStockPresentationProps } from "./types";
@@ -20,6 +21,7 @@ import BatchCard from "./components/BatchCard";
 import BatchDetails from "./components/BatchDetails";
 import BatchEditSummary from "./components/BatchEditSummary";
 import StockMovementWizard from "./components/wizard/StockMovementWizard";
+import StockSellerNotifyModal from "./components/StockSellerNotifyModal";
 
 export default function StockPresentation(props: IStockPresentationProps) {
   const {
@@ -50,6 +52,11 @@ export default function StockPresentation(props: IStockPresentationProps) {
     onCloseDelete,
     onConfirmDelete,
     isDeletingBatch,
+    sellerNotifyOpen,
+    sellerNotifyLines,
+    sellerNotifyDate,
+    onCloseSellerNotify,
+    isListLoading,
     page,
     pageSize,
     totalItems,
@@ -178,17 +185,25 @@ export default function StockPresentation(props: IStockPresentationProps) {
       )}
 
       <Card className={isMobile ? "!p-0 overflow-hidden" : ""}>
-        {isMobile ? (
+        {isListLoading ? (
+          <ListSkeleton
+            variant={isMobile ? "cards" : "table"}
+            rows={5}
+            columns={6}
+          />
+        ) : isMobile ? (
           <BatchCard
             batches={batches}
             onViewDetails={onOpenDetails}
             onEdit={onOpenEdit}
+            onDelete={onOpenDelete}
           />
         ) : (
           <BatchTable
             batches={batches}
             onViewDetails={onOpenDetails}
             onEdit={onOpenEdit}
+            onDelete={onOpenDelete}
           />
         )}
       </Card>
@@ -240,7 +255,7 @@ export default function StockPresentation(props: IStockPresentationProps) {
           batch={selectedBatch}
           onClose={onCloseEdit}
           onSave={onSaveBatchEdit}
-          onDelete={onOpenDelete}
+          onDelete={() => onOpenDelete(selectedBatch)}
         />
       )}
 
@@ -255,6 +270,13 @@ export default function StockPresentation(props: IStockPresentationProps) {
             : "Tem certeza que deseja excluir este lote?"
         }
         isDeleting={isDeletingBatch}
+      />
+
+      <StockSellerNotifyModal
+        isOpen={sellerNotifyOpen}
+        onClose={onCloseSellerNotify}
+        lines={sellerNotifyLines}
+        entryDate={sellerNotifyDate}
       />
 
       <BottomSheet

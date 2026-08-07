@@ -63,6 +63,7 @@ export interface IFinancialPresentationProps {
   formMethods: UseFormReturn<TransactionFormValues>;
   onSave: (data: TransactionFormValues) => void;
   isLoading: boolean;
+  isListLoading: boolean;
   categories: Category[];
   accounts: Account[];
   events: IEventOption[];

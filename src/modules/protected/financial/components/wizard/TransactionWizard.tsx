@@ -96,7 +96,7 @@ export default function TransactionWizard({
 
   const resolveCategoryName = (id?: string | null) => {
     if (!id) return "-";
-    return categories.find((c) => c.id === id)?.name || id;
+    return categories.find((c) => String(c.id) === String(id))?.name || "—";
   };
   const resolveEventName = (id?: string | null) => {
     if (!id) return null;

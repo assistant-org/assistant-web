@@ -7,6 +7,7 @@ import DeleteModal from "../../../shared/components/DeleteModal";
 import BottomSheet from "../../../shared/components/BottomSheet";
 import FilterButton from "../../../shared/components/FilterButton";
 import PaginationControls from "../../../shared/components/PaginationControls";
+import ListSkeleton from "../../../shared/components/ListSkeleton";
 import { useMediaQuery } from "../../../shared/hooks/useMediaQuery";
 import { TransactionStatus } from "../../../shared/services/transactions/types";
 import TransactionWizard from "./components/wizard/TransactionWizard";
@@ -43,6 +44,7 @@ export default function FinancialPresentation({
   formMethods,
   onSave,
   isLoading,
+  isListLoading,
   categories,
   accounts,
   events,
@@ -132,7 +134,8 @@ export default function FinancialPresentation({
   }
   if (filters.categoryId) {
     const name =
-      categories.find((c) => c.id === filters.categoryId)?.name || filters.categoryId;
+      categories.find((c) => String(c.id) === String(filters.categoryId))
+        ?.name || "—";
     filterChips.push({
       key: "category",
       label: `Categoria: ${name}`,
@@ -243,7 +246,13 @@ export default function FinancialPresentation({
       <FilterBadges chips={filterChips} />
 
       <Card className={isMobile ? "!p-0 overflow-hidden" : ""}>
-        {isMobile ? (
+        {isListLoading ? (
+          <ListSkeleton
+            variant={isMobile ? "cards" : "table"}
+            rows={5}
+            columns={6}
+          />
+        ) : isMobile ? (
           <TransactionCard
             transactions={transactions}
             onEdit={onOpenModal}
