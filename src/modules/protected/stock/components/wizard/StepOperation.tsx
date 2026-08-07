@@ -106,8 +106,9 @@ export default function StepOperation({
     append({
       productId: "",
       batchId: null,
-      quantity: 0,
+      quantity: undefined as unknown as number,
       unitValue: isEntry ? 0 : null,
+      availableQuantity: null,
     });
     setEditingIndex(fields.length);
   };
@@ -238,6 +239,7 @@ export default function StepOperation({
                 optionId="id"
                 onValueChange={(id) => {
                   setValue(`items.${index}.batchId`, null);
+                  setValue(`items.${index}.availableQuantity`, null);
                   if (isEntry && id) {
                     const product = products.find((p) => p.id === id);
                     setValue(
@@ -259,6 +261,13 @@ export default function StepOperation({
                   options={batchOptionsFor(productId, eventId)}
                   optionName="name"
                   optionId="id"
+                  onValueChange={(id) => {
+                    const batch = batches.find((b) => b.id === id);
+                    setValue(
+                      `items.${index}.availableQuantity`,
+                      batch?.availableQuantity ?? null,
+                    );
+                  }}
                 />
               )}
 

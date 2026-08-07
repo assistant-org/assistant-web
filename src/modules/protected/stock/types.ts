@@ -52,12 +52,18 @@ export interface IStockPresentationProps {
     unitValue?: number;
   }) => void;
   isDeleteModalOpen: boolean;
-  onOpenDelete: () => void;
+  onOpenDelete: (batch: StockBatch) => void;
   onCloseDelete: () => void;
   onConfirmDelete: () => void;
   isDeletingBatch: boolean;
 
+  sellerNotifyOpen: boolean;
+  sellerNotifyLines: { productName: string; quantity: number }[];
+  sellerNotifyDate: string | null;
+  onCloseSellerNotify: () => void;
+
   isLoading: boolean;
+  isListLoading: boolean;
 
   page: number;
   pageSize: PageSize;
