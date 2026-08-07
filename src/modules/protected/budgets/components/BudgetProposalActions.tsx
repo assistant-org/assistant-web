@@ -1,6 +1,10 @@
 import React from "react";
 import Button from "../../../../shared/components/Button";
-import { downloadBudgetProposalPdf } from "../../../../shared/services/budgets/pdf/budgetProposalPdf";
+import {
+  downloadBudgetProposalPdf,
+  downloadBudgetProposalPng,
+  toProposalPdfInput,
+} from "../../../../shared/services/budgets/pdf/budgetProposalPdf";
 import { buildWhatsAppLink } from "../../../../shared/services/budgets/whatsapp/buildWhatsAppLink";
 import { Budget } from "../../../../shared/services/budgets/types";
 
@@ -12,17 +16,11 @@ export default function BudgetProposalActions({
   budget,
 }: BudgetProposalActionsProps) {
   const handlePdf = async () => {
-    await downloadBudgetProposalPdf({
-      clientName: budget.clientName,
-      clientPhone: budget.clientPhone,
-      clientCity: budget.clientCity,
-      notes: budget.notes,
-      serviceType: budget.serviceType,
-      calculation: {
-        ...budget.calculation,
-        finalTotal: budget.finalTotal,
-      },
-    });
+    await downloadBudgetProposalPdf(toProposalPdfInput(budget));
+  };
+
+  const handlePng = async () => {
+    await downloadBudgetProposalPng(toProposalPdfInput(budget));
   };
 
   const handleWhatsApp = () => {
@@ -40,8 +38,11 @@ export default function BudgetProposalActions({
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Button type="button" variant="secondary" onClick={handlePdf}>
+      <Button type="button" variant="secondary" onClick={() => void handlePdf()}>
         Baixar PDF
+      </Button>
+      <Button type="button" variant="secondary" onClick={() => void handlePng()}>
+        Baixar imagem
       </Button>
       <Button type="button" onClick={handleWhatsApp}>
         Enviar para WhatsApp
