@@ -133,6 +133,12 @@ export const BUDGET_EXTRAS: ExtraServiceDefinition[] = [
     flags: { waiveOperationalCost: true },
     calc: () => 0,
   },
+  {
+    id: "custom_mugs",
+    label: "Canecas personalizadas",
+    description: "R$ 3,00 por pessoa (1 caneca por convidado)",
+    calc: ({ people }) => people * 3,
+  },
 ];
 
 export function getServiceTypeConfig(

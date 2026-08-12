@@ -90,11 +90,18 @@ export class BudgetCalculatorService {
     );
 
     const extraCtx = buildExtraCalcContext(input);
-    const extraLines: BudgetExtraLine[] = selectedExtras.map((def) => ({
-      extraId: def.id,
-      label: def.label,
-      amount: roundMoney(def.calc(extraCtx)),
-    }));
+    const extraLines: BudgetExtraLine[] = selectedExtras.map((def) => {
+      const amount = roundMoney(def.calc(extraCtx));
+      const label =
+        def.id === "custom_mugs"
+          ? `${def.label} (${extraCtx.people} × R$ 3,00)`
+          : def.label;
+      return {
+        extraId: def.id,
+        label,
+        amount,
+      };
+    });
     const extrasSubtotal = roundMoney(
       extraLines.reduce((sum, line) => sum + line.amount, 0),
     );
