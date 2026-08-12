@@ -1,7 +1,12 @@
 import React from "react";
+import { ClipLoader } from "react-spinners";
 import { ILoginPresentationProps } from "./types";
 import Button from "../../../shared/components/Button";
-import Input from "../../../shared/components/Input";import { ClipLoader } from 'react-spinners';
+import Input from "../../../shared/components/Input";
+import { PROPOSAL_BRAND } from "../../../shared/services/budgets/pdf/proposal.brand";
+
+const labelBrown = "!text-[#3d2a1c]";
+
 export default function LoginPresentation({
   register,
   handleSubmit,
@@ -10,35 +15,61 @@ export default function LoginPresentation({
   isLoading,
 }: ILoginPresentationProps) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-800">
-      <div className="max-w-md w-full bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8">
-        <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-2">
-          Welcome Back
-        </h2>
-        <p className="text-center text-gray-500 dark:text-gray-400 mb-8">
-          Sign in to continue
-        </p>
+    <div
+      className="relative min-h-screen flex items-center justify-center px-4 py-10"
+      style={{
+        backgroundColor: "#f7f3eb",
+        backgroundImage:
+          "radial-gradient(circle at 18% 22%, rgba(120,90,50,0.07) 0 1px, transparent 1px), radial-gradient(circle at 82% 78%, rgba(120,90,50,0.05) 0 1px, transparent 1px)",
+        backgroundSize: "44px 44px, 60px 60px",
+      }}
+    >
+      <div className="relative w-full max-w-sm">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <img
+            src={PROPOSAL_BRAND.logoSrc}
+            alt={PROPOSAL_BRAND.name}
+            width={88}
+            height={88}
+            className="mb-4 h-20 w-20 object-contain"
+          />
+          <h1 className="text-2xl font-extrabold tracking-tight text-[#2c2118] sm:text-3xl">
+            {PROPOSAL_BRAND.name}
+          </h1>
+          <p className="mt-2 text-sm text-[#6b5a4a]">Entre na sua conta</p>
+        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <Input
             id="email"
-            label="Email Address"
+            label="E-mail"
             type="email"
+            autoComplete="email"
             register={register("email")}
             error={errors.email?.message}
             disabled={isLoading}
+            labelClassName={labelBrown}
+            className="bg-white/70 border-[#d6c8b4] focus:border-[#3d2a1c] focus:ring-[#3d2a1c]"
           />
           <Input
             id="password"
-            label="Password"
+            label="Senha"
             type="password"
+            autoComplete="current-password"
             register={register("password")}
             error={errors.password?.message}
             disabled={isLoading}
+            labelClassName={labelBrown}
+            className="bg-white/70 border-[#d6c8b4] focus:border-[#3d2a1c] focus:ring-[#3d2a1c]"
           />
 
-          <Button type="submit" disabled={isLoading} fullWidth>
-            {isLoading ? <ClipLoader size={20} color="#ffffff" /> : 'Sign In'}
+          <Button
+            type="submit"
+            disabled={isLoading}
+            fullWidth
+            className="!mt-7 !bg-[#3d2a1c] hover:!bg-[#2c2118] focus-visible:!ring-[#3d2a1c]"
+          >
+            {isLoading ? <ClipLoader size={20} color="#ffffff" /> : "Entrar"}
           </Button>
         </form>
       </div>
