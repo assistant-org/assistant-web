@@ -1,9 +1,14 @@
-
-import { z } from 'zod';
+import { z } from "zod";
 
 export const loginFormSchema = z.object({
-  email: z.string().email('Please enter a valid email address.').min(1, 'Email is required.'),
-  password: z.string().min(6, 'Password must be at least 6 characters.').min(1, 'Password is required.'),
+  email: z
+    .string()
+    .email("Informe um e-mail válido.")
+    .min(1, "E-mail é obrigatório."),
+  password: z
+    .string()
+    .min(6, "A senha deve ter pelo menos 6 caracteres.")
+    .min(1, "Senha é obrigatória."),
 });
 
 export type LoginFormSchema = z.infer<typeof loginFormSchema>;
