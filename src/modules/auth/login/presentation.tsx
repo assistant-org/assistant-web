@@ -49,7 +49,7 @@ export default function LoginPresentation({
             error={errors.email?.message}
             disabled={isLoading}
             labelClassName={labelBrown}
-            className="!bg-transparent border-[#d6c8b4] shadow-none focus:border-[#3d2a1c] focus:ring-[#3d2a1c]"
+            className="!bg-transparent !text-[#3d2a1c] placeholder:!text-[#9a8570] border-[#d6c8b4] shadow-none focus:border-[#3d2a1c] focus:ring-[#3d2a1c]"
           />
           <Input
             id="password"
@@ -60,7 +60,7 @@ export default function LoginPresentation({
             error={errors.password?.message}
             disabled={isLoading}
             labelClassName={labelBrown}
-            className="!bg-transparent border-[#d6c8b4] shadow-none focus:border-[#3d2a1c] focus:ring-[#3d2a1c]"
+            className="!bg-transparent !text-[#3d2a1c] placeholder:!text-[#9a8570] border-[#d6c8b4] shadow-none focus:border-[#3d2a1c] focus:ring-[#3d2a1c]"
           />
 
           <Button
