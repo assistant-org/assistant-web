@@ -6,6 +6,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   id: string;
   register: UseFormRegisterReturn;
   error?: string;
+  labelClassName?: string;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -15,6 +16,7 @@ const Input: React.FC<InputProps> = ({
   error,
   type,
   className,
+  labelClassName,
   ...props
 }) => {
   const isDate = type === "date";
@@ -26,7 +28,7 @@ const Input: React.FC<InputProps> = ({
     <div>
       <label
         htmlFor={id}
-        className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        className={`block text-sm font-medium text-gray-700 dark:text-gray-300 ${labelClassName ?? ""}`}
       >
         {label}
       </label>
