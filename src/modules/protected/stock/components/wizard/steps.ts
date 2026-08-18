@@ -1,4 +1,5 @@
 import { StockMovementType } from "../../../../../shared/services/stock/types";
+import { movementRequiresEvent } from "../../../../../shared/services/stock/schema";
 import { StockFormValues } from "../../schema";
 
 export type StockStepKey =
@@ -25,6 +26,14 @@ const OPERATION_STEP: StockStepDefinition = {
   fields: ["eventId", "mode", "items"],
 };
 
+function getOperationStep(type: StockMovementType): StockStepDefinition {
+  const fields: (keyof StockFormValues)[] = ["mode", "items"];
+  if (movementRequiresEvent(type)) {
+    fields.unshift("eventId");
+  }
+  return { ...OPERATION_STEP, fields };
+}
+
 const META_STEP_ENTRY: StockStepDefinition = {
   key: "meta",
   title: "Datas e descrição",
@@ -45,11 +54,11 @@ export const STOCK_REVIEW_STEP: StockStepDefinition = {
 
 export function getStockStepsForType(type: StockMovementType): StockStepDefinition[] {
   if (type === StockMovementType.ENTRY) {
-    return [TYPE_STEP, OPERATION_STEP, META_STEP_ENTRY, STOCK_REVIEW_STEP];
+    return [TYPE_STEP, getOperationStep(type), META_STEP_ENTRY, STOCK_REVIEW_STEP];
   }
-  return [TYPE_STEP, OPERATION_STEP, META_STEP_OUT, STOCK_REVIEW_STEP];
+  return [TYPE_STEP, getOperationStep(type), META_STEP_OUT, STOCK_REVIEW_STEP];
 }
 
-export function requiresEvent(_type?: StockMovementType): boolean {
-  return true;
+export function requiresEvent(type?: StockMovementType): boolean {
+  return type != null && movementRequiresEvent(type);
 }

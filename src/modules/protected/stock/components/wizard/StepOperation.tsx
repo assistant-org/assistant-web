@@ -11,6 +11,7 @@ import {
   StockMovementType,
 } from "../../../../../shared/services/stock/types";
 import { formatDateBR } from "../../../../../shared/utils/formatDate";
+import { movementRequiresEvent } from "../../../../../shared/services/stock/schema";
 import { StockFormValues } from "../../schema";
 
 interface IEventOption {
@@ -82,6 +83,7 @@ export default function StepOperation({
   const type = watch("type");
   const mode = watch("mode");
   const isEntry = type === StockMovementType.ENTRY;
+  const showEvent = movementRequiresEvent(type);
   const activeProducts = useMemo(() => products.filter((p) => p.active), [products]);
 
   const [editingIndex, setEditingIndex] = useState<number>(0);
@@ -144,18 +146,20 @@ export default function StepOperation({
         ))}
       </div>
 
-      <Select
-        id="eventId"
-        name="eventId"
-        control={control}
-        label="Evento"
-        error={errors.eventId?.message as string | undefined}
-        disabled={isLoading}
-        options={events}
-        optionName="name"
-        optionId="id"
-        placeholder="Selecione o evento"
-      />
+      {showEvent ? (
+        <Select
+          id="eventId"
+          name="eventId"
+          control={control}
+          label="Evento"
+          error={errors.eventId?.message as string | undefined}
+          disabled={isLoading}
+          options={events}
+          optionName="name"
+          optionId="id"
+          placeholder="Selecione o evento"
+        />
+      ) : null}
 
       <div className="space-y-3">
         {fields.map((field, index) => {

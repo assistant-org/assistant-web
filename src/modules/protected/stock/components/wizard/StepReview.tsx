@@ -2,6 +2,10 @@ import React from "react";
 import { Pencil } from "lucide-react";
 import { StockMovementType } from "../../../../../shared/services/stock/types";
 import { formatDateBR } from "../../../../../shared/utils/formatDate";
+import {
+  movementRequiresEvent,
+  movementRequiresJustification,
+} from "../../../../../shared/services/stock/schema";
 import { StockFormValues } from "../../schema";
 import { StockStepDefinition, StockStepKey } from "./steps";
 
@@ -37,6 +41,10 @@ export default function StepReview({
   resolveEventName,
 }: StepReviewProps) {
   const isEntry = type === StockMovementType.ENTRY;
+  const showEvent =
+    movementRequiresEvent(type) ||
+    Boolean(values.eventId && String(values.eventId).trim());
+  const showJustification = movementRequiresJustification(type);
 
   return (
     <div className="space-y-4">
@@ -65,9 +73,11 @@ export default function StepReview({
             <Pencil className="w-4 h-4" />
           </button>
         </div>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-          Evento: {resolveEventName(values.eventId)}
-        </p>
+        {showEvent ? (
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+            Evento: {resolveEventName(values.eventId)}
+          </p>
+        ) : null}
         <ul className="space-y-2">
           {(values.items || []).map((item, i) => (
             <li
@@ -119,9 +129,14 @@ export default function StepReview({
             <p className="text-sm text-gray-700 dark:text-gray-300">
               Data: {formatDateBR(values.date)}
             </p>
-            {values.reason && (
+            {showJustification && values.reason ? (
+              <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
+                <span className="font-medium">Justificativa:</span> {values.reason}
+              </p>
+            ) : null}
+            {!showJustification && values.reason ? (
               <p className="text-sm text-gray-500 mt-1">{values.reason}</p>
-            )}
+            ) : null}
           </>
         )}
       </div>

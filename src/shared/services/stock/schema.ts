@@ -22,22 +22,45 @@ export const stockLineItemSchema = z.object({
 
 export type StockLineItem = z.infer<typeof stockLineItemSchema>;
 
+export function movementRequiresEvent(type: StockMovementType): boolean {
+  return (
+    type === StockMovementType.ENTRY || type === StockMovementType.EXIT
+  );
+}
+
+export function movementRequiresJustification(type: StockMovementType): boolean {
+  return (
+    type === StockMovementType.LOSS ||
+    type === StockMovementType.INTERNAL_CONSUMPTION
+  );
+}
+
 const baseFields = {
   mode: z.enum(["individual", "lote"]).default("individual"),
-  eventId: requiredSelectString("Evento é obrigatório"),
+  eventId: z.preprocess(emptyToNull, z.string().nullable().optional()),
   items: z.array(stockLineItemSchema).min(1, "Adicione pelo menos um item"),
   reason: z.string().optional().nullable(),
   observations: z.string().optional().nullable(),
   direction: z.nativeEnum(StockMovementDirection).optional().nullable(),
 };
 
-export const entryMovementSchema = z.object({
-  type: z.literal(StockMovementType.ENTRY),
-  entryDate: z.string().min(1, "Data de entrada é obrigatória"),
-  expiryDate: z.preprocess(emptyToNull, z.string().nullable().optional()),
-  date: z.string().optional().nullable(),
-  ...baseFields,
-});
+export const entryMovementSchema = z
+  .object({
+    type: z.literal(StockMovementType.ENTRY),
+    entryDate: z.string().min(1, "Data de entrada é obrigatória"),
+    expiryDate: z.preprocess(emptyToNull, z.string().nullable().optional()),
+    date: z.string().optional().nullable(),
+    ...baseFields,
+  })
+  .superRefine((data, ctx) => {
+    if (!data.eventId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Evento é obrigatório",
+        path: ["eventId"],
+      });
+    }
+  });
 
 export const outgoingMovementSchema = z
   .object({
@@ -52,6 +75,25 @@ export const outgoingMovementSchema = z
     ...baseFields,
   })
   .superRefine((data, ctx) => {
+    if (data.type === StockMovementType.EXIT && !data.eventId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Evento é obrigatório",
+        path: ["eventId"],
+      });
+    }
+
+    if (movementRequiresJustification(data.type)) {
+      const justification = data.reason?.trim() ?? "";
+      if (!justification) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Justificativa é obrigatória",
+          path: ["reason"],
+        });
+      }
+    }
+
     const batchIds = new Set<string>();
     data.items.forEach((item, i) => {
       if (!item.batchId) {
@@ -84,16 +126,26 @@ export const outgoingMovementSchema = z
     });
   });
 
-export const adjustmentMovementSchema = z.object({
-  type: z.literal(StockMovementType.ADJUSTMENT),
-  date: z.string().min(1, "Data é obrigatória"),
-  entryDate: z.string().optional().nullable(),
-  expiryDate: z.string().optional().nullable(),
-  direction: z.nativeEnum(StockMovementDirection, {
-    error: "Direção do ajuste é obrigatória",
-  }),
-  ...baseFields,
-});
+export const adjustmentMovementSchema = z
+  .object({
+    type: z.literal(StockMovementType.ADJUSTMENT),
+    date: z.string().min(1, "Data é obrigatória"),
+    entryDate: z.string().optional().nullable(),
+    expiryDate: z.string().optional().nullable(),
+    direction: z.nativeEnum(StockMovementDirection, {
+      error: "Direção do ajuste é obrigatória",
+    }),
+    ...baseFields,
+  })
+  .superRefine((data, ctx) => {
+    if (!data.eventId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Evento é obrigatório",
+        path: ["eventId"],
+      });
+    }
+  });
 
 export const stockMovementSchema = z.discriminatedUnion("type", [
   entryMovementSchema,

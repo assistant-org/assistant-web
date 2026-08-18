@@ -8,12 +8,16 @@ import {
   StockMovementType,
 } from "../../../../../shared/services/stock/types";
 import { StockFormValues } from "../../schema";
-import { getStockStepsForType, StockStepKey } from "./steps";
+import {
+  movementRequiresEvent,
+  movementRequiresJustification,
+} from "../../../../../shared/services/stock/schema";
 import StepTypeCards from "./StepTypeCards";
 import StepOperation from "./StepOperation";
 import StepEntryMeta from "./StepEntryMeta";
 import StepOutgoingMeta from "./StepOutgoingMeta";
 import StepReview from "./StepReview";
+import { getStockStepsForType, StockStepKey } from "./steps";
 
 interface IEventOption {
   id: string;
@@ -42,7 +46,7 @@ export default function StockMovementWizard({
   events,
 }: StockMovementWizardProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const { watch, setValue, trigger, handleSubmit, getValues } = formMethods;
+  const { watch, setValue, trigger, handleSubmit, getValues, setError } = formMethods;
   const type = watch("type");
 
   useEffect(() => {
@@ -73,7 +77,24 @@ export default function StockMovementWizard({
 
   const handleNext = async () => {
     const fields = currentStep.fields;
-    const valid = fields.length === 0 ? true : await trigger(fields as any);
+    let valid = fields.length === 0 ? true : await trigger(fields as any);
+
+    if (valid && currentStep.key === "operation" && movementRequiresEvent(type)) {
+      const eventId = getValues("eventId");
+      if (!eventId) {
+        setError("eventId", { type: "manual", message: "Evento é obrigatório" });
+        valid = false;
+      }
+    }
+
+    if (valid && currentStep.key === "meta" && movementRequiresJustification(type)) {
+      const reason = getValues("reason")?.trim() ?? "";
+      if (!reason) {
+        setError("reason", { type: "manual", message: "Justificativa é obrigatória" });
+        valid = false;
+      }
+    }
+
     if (valid) setCurrentStepIndex((i) => Math.min(i + 1, steps.length - 1));
   };
 
@@ -117,7 +138,11 @@ export default function StockMovementWizard({
         return type === StockMovementType.ENTRY ? (
           <StepEntryMeta formMethods={formMethods} isLoading={isLoading} />
         ) : (
-          <StepOutgoingMeta formMethods={formMethods} isLoading={isLoading} />
+          <StepOutgoingMeta
+            formMethods={formMethods}
+            type={type}
+            isLoading={isLoading}
+          />
         );
       case "review":
         return (
