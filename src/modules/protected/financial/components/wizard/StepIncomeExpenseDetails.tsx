@@ -62,7 +62,7 @@ export default function StepIncomeExpenseDetails({
       />
       <Input
         id="date"
-        label="Data"
+        label="Data de transação"
         type="date"
         register={register("date")}
         error={errors.date?.message}

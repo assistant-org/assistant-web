@@ -14,7 +14,7 @@ const emptyToNull = (val: unknown) =>
 export const transactionSchema = z
   .object({
     type: z.enum([TransactionType.INCOME, TransactionType.EXPENSE]),
-    date: z.string().min(1, "Data é obrigatória"),
+    date: z.string().min(1, "Data de transação é obrigatória"),
     value: z
       .number({ error: "Valor é obrigatório" })
       .min(0.01, "Valor deve ser maior que zero"),

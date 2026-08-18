@@ -63,7 +63,10 @@ const TransactionCard: React.FC<ITransactionListProps> = ({
                   {description}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  {formatDateBR(transaction.date)}
+                  {formatDateBR(transaction.created_at)}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Data de transação: {formatDateBR(transaction.date)}
                 </p>
               </button>
               <div className="flex flex-col items-end gap-2 shrink-0">

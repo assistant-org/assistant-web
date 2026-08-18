@@ -54,7 +54,10 @@ const TransactionTable: React.FC<ITransactionListProps> = ({
         <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
           <tr>
             <th scope="col" className="px-6 py-3">
-              Data
+              {" "}
+            </th>
+            <th scope="col" className="px-6 py-3">
+              Data de transação
             </th>
             <th scope="col" className="px-6 py-3">
               Tipo
@@ -87,6 +90,9 @@ const TransactionTable: React.FC<ITransactionListProps> = ({
                   isCancelled ? "opacity-50" : ""
                 }`}
               >
+                <td className="px-6 py-4">
+                  {formatDateBR(transaction.created_at)}
+                </td>
                 <td className="px-6 py-4">
                   {formatDateBR(transaction.date)}
                 </td>
@@ -148,7 +154,7 @@ const TransactionTable: React.FC<ITransactionListProps> = ({
           })}
           {transactions.length === 0 && (
             <tr>
-              <td colSpan={6} className="px-6 py-8 text-center text-gray-400">
+              <td colSpan={7} className="px-6 py-8 text-center text-gray-400">
                 Nenhuma movimentação encontrada.
               </td>
             </tr>

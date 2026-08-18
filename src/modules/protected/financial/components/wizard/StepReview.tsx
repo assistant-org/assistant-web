@@ -59,7 +59,7 @@ export default function StepReview({
           };
         case "incomeExpenseDetails": {
           const rows: ReviewRow[] = [
-            { label: "Data", value: formatDateBR(values.date) },
+            { label: "Data de transação", value: formatDateBR(values.date) },
             { label: "Valor", value: formatCurrency(values.value) },
             { label: "Categoria", value: resolveCategoryName(values.categoryId) },
           ];

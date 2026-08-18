@@ -39,7 +39,11 @@ const TransactionDetails: React.FC<ITransactionDetailsProps> = ({
         </span>
       </Field>
 
-      <Field label="Data">{formatDateBR(transaction.date)}</Field>
+      <p className="text-sm text-gray-500 dark:text-gray-400">
+        {formatDateBR(transaction.created_at)}
+      </p>
+
+      <Field label="Data de transação">{formatDateBR(transaction.date)}</Field>
 
       {isTransfer ? (
         <>
