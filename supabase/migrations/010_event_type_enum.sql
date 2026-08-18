@@ -1,3 +1,3 @@
--- Allow event types sent by the app (EventType.CLOSED / EventType.SINGLE).
-ALTER TYPE "EVENT_TYPE_ENUM" ADD VALUE IF NOT EXISTS 'fechado';
-ALTER TYPE "EVENT_TYPE_ENUM" ADD VALUE IF NOT EXISTS 'avulso';
+-- Canonical EVENT_TYPE_ENUM labels (already defined in Supabase):
+-- CLOSED_EVENT | OPEN_EVENTS
+-- App sends these via EventType in src/modules/protected/events/types.ts

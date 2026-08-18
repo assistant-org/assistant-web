@@ -3,8 +3,8 @@ import { EventFormSchema } from "./schema";
 import { PageSize } from "../../../shared/hooks/usePagination";
 
 export enum EventType {
-  CLOSED = "fechado",
-  SINGLE = "avulso",
+  CLOSED = "CLOSED_EVENT",
+  SINGLE = "OPEN_EVENTS",
 }
 
 export const EVENT_TYPE_LABELS: Record<EventType, string> = {
