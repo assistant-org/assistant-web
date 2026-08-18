@@ -20,6 +20,8 @@ export interface BudgetProposalDocumentProps {
   includeGift?: boolean;
 }
 
+const CUSTOM_MUGS_EXTRA_ID = "custom_mugs";
+
 const A4_WIDTH_PX = 794;
 
 function flavorNames(flavors: BudgetFlavorLine[]): string {
@@ -50,7 +52,11 @@ export default function BudgetProposalDocument({
   includeGift = true,
 }: BudgetProposalDocumentProps) {
   const serviceTitle = PROPOSAL_SERVICE_TITLES[serviceType];
-  const clientExtras = extras.filter((e) => e.amount > 0);
+  const hasCustomMugs = extras.some((e) => e.extraId === CUSTOM_MUGS_EXTRA_ID);
+  const showGift = includeGift && hasCustomMugs;
+  const clientExtras = extras.filter(
+    (e) => e.amount > 0 && e.extraId !== CUSTOM_MUGS_EXTRA_ID,
+  );
 
   return (
     <div
@@ -205,7 +211,7 @@ export default function BudgetProposalDocument({
                 <strong>{hours} horas</strong> de serviço
               </li>
             </ul>
-            {includeGift ? (
+            {showGift ? (
               <div style={{ marginTop: 10 }}>
                 <div style={{ fontWeight: 700, marginBottom: 4 }}>
                   Brinde incluso:
