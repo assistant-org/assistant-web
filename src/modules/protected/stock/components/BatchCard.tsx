@@ -41,6 +41,9 @@ export default function BatchCard({
               {batch.productName || batch.productId}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              {formatDateBR(batch.created_at)}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               {batch.expiryDate
                 ? `Val. ${formatDateBR(batch.expiryDate)}`
                 : "Sem validade"}

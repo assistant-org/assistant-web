@@ -63,6 +63,11 @@ export default function BatchDetails({
           {batch.status === StockBatchStatus.ACTIVE ? "Ativo" : "Encerrado"}
         </Field>
         <Field label="Evento">{eventName || "-"}</Field>
+        <div>
+          <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {formatDateBR(batch.created_at)}
+          </div>
+        </div>
         <Field label="Data de entrada">
           {formatDateBR(batch.entryDate)}
         </Field>

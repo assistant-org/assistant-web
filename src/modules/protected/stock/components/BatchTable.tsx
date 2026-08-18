@@ -27,6 +27,7 @@ export default function BatchTable({
         <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
           <tr>
             <th className="px-6 py-3">Produto</th>
+            <th className="px-6 py-3"></th>
             <th className="px-6 py-3">Validade</th>
             <th className="px-6 py-3 text-right">Litros disponíveis</th>
             <th className="px-6 py-3 text-right">Valor</th>
@@ -37,7 +38,7 @@ export default function BatchTable({
         <tbody>
           {batches.length === 0 ? (
             <tr>
-              <td colSpan={6} className="px-6 py-8 text-center">
+              <td colSpan={7} className="px-6 py-8 text-center">
                 Nenhum lote encontrado.
               </td>
             </tr>
@@ -49,6 +50,9 @@ export default function BatchTable({
               >
                 <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
                   {batch.productName || batch.productId}
+                </td>
+                <td className="px-6 py-4">
+                  {formatDateBR(batch.created_at)}
                 </td>
                 <td className="px-6 py-4">
                   {formatDateBR(batch.expiryDate)}
