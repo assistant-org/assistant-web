@@ -63,7 +63,7 @@ const TransactionCard: React.FC<ITransactionListProps> = ({
                   {description}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  {formatDateBR(transaction.created_at)}
+                  Data de criação: {formatDateBR(transaction.created_at)}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                   Data de transação: {formatDateBR(transaction.date)}

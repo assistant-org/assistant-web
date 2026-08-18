@@ -27,7 +27,7 @@ export default function BatchTable({
         <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
           <tr>
             <th className="px-6 py-3">Produto</th>
-            <th className="px-6 py-3"></th>
+            <th className="px-6 py-3">Data de criação</th>
             <th className="px-6 py-3">Validade</th>
             <th className="px-6 py-3 text-right">Litros disponíveis</th>
             <th className="px-6 py-3 text-right">Valor</th>
