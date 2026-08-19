@@ -29,6 +29,9 @@ export interface ExtraCalcContext {
   people: number;
   serviceType: BudgetServiceType;
   distanceKm: number;
+  billingLiters: number;
+  /** Flavor names (lower-cased) for tasting price logic. */
+  flavors: string[];
 }
 
 export interface ExtraServiceDefinition {
@@ -139,6 +142,24 @@ export const BUDGET_EXTRAS: ExtraServiceDefinition[] = [
     description: "R$ 3,00 por pessoa (1 caneca por convidado)",
     calc: ({ people }) => people * 3,
   },
+  {
+    id: "disposable_cups",
+    label: "Copos descartáveis",
+    description: "R$ 0,30 por copo de 300 ml (calculado pelos litros)",
+    calc: ({ billingLiters }) => Math.ceil(billingLiters / 0.3) * 0.3,
+  },
+  {
+    id: "tasting",
+    label: "Degustação",
+    description: "Degustação gratuita dos chopps selecionados",
+    calc: ({ flavors }) => {
+      const isPilsenOnly =
+        flavors.length > 0 && flavors.every((f) => f.includes("pilsen"));
+      const growlerCost =
+        flavors.length === 1 && isPilsenOnly ? 12 : 14 * flavors.length;
+      return growlerCost + 20 + 10;
+    },
+  },
 ];
 
 export function getServiceTypeConfig(
@@ -175,13 +196,16 @@ export function getDefaultConsumptionProfileId(): ConsumptionProfileId {
 export function buildExtraCalcContext(
   input: Pick<
     BudgetCalculateInput,
-    "hours" | "people" | "serviceType" | "distanceKm"
+    "hours" | "people" | "serviceType" | "distanceKm" | "flavors"
   >,
+  billingLiters: number,
 ): ExtraCalcContext {
   return {
     hours: input.hours,
     people: input.people,
     serviceType: input.serviceType,
     distanceKm: input.distanceKm,
+    billingLiters,
+    flavors: input.flavors.map((f) => f.name.toLowerCase()),
   };
 }

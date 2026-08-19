@@ -89,13 +89,18 @@ export class BudgetCalculatorService {
       waiveOperational,
     );
 
-    const extraCtx = buildExtraCalcContext(input);
+    const extraCtx = buildExtraCalcContext(input, billingLiters);
     const extraLines: BudgetExtraLine[] = selectedExtras.map((def) => {
       const amount = roundMoney(def.calc(extraCtx));
-      const label =
-        def.id === "custom_mugs"
-          ? `${def.label} (${extraCtx.people} × R$ 3,00)`
-          : def.label;
+      let label = def.label;
+      if (def.id === "custom_mugs") {
+        label = `${def.label} (${extraCtx.people} × R$ 3,00)`;
+      } else if (def.id === "disposable_cups") {
+        const cups = Math.ceil(billingLiters / 0.3);
+        label = `Copos descartáveis de 300 ml (até ${cups} unidades para ${extraCtx.people} pessoas)`;
+      } else if (def.id === "tasting") {
+        label = "Degustação gratuita dos chopps selecionados";
+      }
       return {
         extraId: def.id,
         label,
