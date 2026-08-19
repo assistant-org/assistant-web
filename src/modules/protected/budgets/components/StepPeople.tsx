@@ -3,7 +3,6 @@ import {
   PEOPLE_MAX,
   PEOPLE_MIN,
   PEOPLE_STEP,
-  snapToStep,
 } from "../../../../shared/services/budgets/budget.config";
 
 interface StepPeopleProps {
@@ -25,9 +24,11 @@ export default function StepPeople({
 
   const commit = () => {
     const parsed = Number(draft.replace(",", "."));
-    const next = snapToStep(parsed, PEOPLE_MIN, PEOPLE_MAX, PEOPLE_STEP);
-    setDraft(String(next));
-    onChange(next);
+    const clamped = Number.isFinite(parsed)
+      ? Math.min(PEOPLE_MAX, Math.max(PEOPLE_MIN, Math.round(parsed)))
+      : PEOPLE_MIN;
+    setDraft(String(clamped));
+    onChange(clamped);
   };
 
   return (

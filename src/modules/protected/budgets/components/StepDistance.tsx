@@ -4,7 +4,6 @@ import {
   DISTANCE_MIN,
   DISTANCE_STEP,
   getServiceTypeConfig,
-  snapToStep,
 } from "../../../../shared/services/budgets/budget.config";
 import { formatCurrency } from "../../../../shared/services/budgets/format";
 import { BudgetServiceType } from "../../../../shared/services/budgets/types";
@@ -31,9 +30,11 @@ export default function StepDistance({
 
   const commit = () => {
     const parsed = Number(draft.replace(",", "."));
-    const next = snapToStep(parsed, DISTANCE_MIN, DISTANCE_MAX, DISTANCE_STEP);
-    setDraft(String(next));
-    onChange(next);
+    const clamped = Number.isFinite(parsed)
+      ? Math.min(DISTANCE_MAX, Math.max(DISTANCE_MIN, Math.round(parsed)))
+      : DISTANCE_MIN;
+    setDraft(String(clamped));
+    onChange(clamped);
   };
 
   return (

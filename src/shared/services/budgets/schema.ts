@@ -28,11 +28,7 @@ export const budgetExtraSchema = z.object({
 
 export const budgetFormSchema = z.object({
   serviceType: z.enum(["TOTEM", "KOMBI"]),
-  people: z
-    .number()
-    .min(PEOPLE_MIN)
-    .max(PEOPLE_MAX)
-    .refine((n) => n % 5 === 0, { message: "Incremento de 5 pessoas" }),
+  people: z.number().min(PEOPLE_MIN).max(PEOPLE_MAX),
   hours: z
     .number()
     .refine((h) => (DURATION_OPTIONS as readonly number[]).includes(h), {
@@ -40,11 +36,7 @@ export const budgetFormSchema = z.object({
     }),
   consumptionProfile: z.enum(["CASUAL", "MODERATE", "HIGH"]),
   otherDrinks: z.boolean(),
-  distanceKm: z
-    .number()
-    .min(DISTANCE_MIN)
-    .max(DISTANCE_MAX)
-    .refine((n) => n % 5 === 0, { message: "Incremento de 5 km" }),
+  distanceKm: z.number().min(DISTANCE_MIN).max(DISTANCE_MAX),
   flavors: z
     .array(budgetFlavorSchema)
     .min(1, "Selecione ao menos um sabor")
@@ -64,6 +56,7 @@ export const budgetFormSchema = z.object({
   clientPhone: z.string().min(8, "Telefone obrigatório"),
   clientCity: z.string().min(1, "Cidade obrigatória"),
   eventDate: z.string().min(1, "Data do evento obrigatória"),
+  eventLocation: z.string().optional(),
   notes: z.string(),
   negotiatedTotal: z.number().min(0).nullable().optional(),
   adjustmentReason: z.string().nullable().optional(),
@@ -85,6 +78,7 @@ export const budgetFormDefaults = (): BudgetFormValues => ({
   clientPhone: "",
   clientCity: "",
   eventDate: "",
+  eventLocation: "",
   notes: "",
   negotiatedTotal: null,
   adjustmentReason: null,
