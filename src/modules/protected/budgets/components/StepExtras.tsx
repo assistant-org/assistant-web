@@ -9,8 +9,12 @@ interface StepExtrasProps {
   disabled?: boolean;
 }
 
-/** Only registry extras: Operador + Parceria. */
-const EXTRA_OPTIONS = BUDGET_EXTRAS.map((e) => ({
+/** Auto-calculated extras are not user-selectable. */
+const AUTO_EXTRAS = new Set(["disposable_cups"]);
+
+const EXTRA_OPTIONS = BUDGET_EXTRAS.filter(
+  (e) => !AUTO_EXTRAS.has(e.id),
+).map((e) => ({
   id: e.id,
   label: e.label,
 }));

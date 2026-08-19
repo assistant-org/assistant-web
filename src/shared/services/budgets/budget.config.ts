@@ -143,12 +143,6 @@ export const BUDGET_EXTRAS: ExtraServiceDefinition[] = [
     calc: ({ people }) => people * 3,
   },
   {
-    id: "disposable_cups",
-    label: "Copos descartáveis",
-    description: "R$ 0,30 por copo de 300 ml (calculado pelos litros)",
-    calc: ({ billingLiters }) => Math.ceil(billingLiters / 0.3) * 0.3,
-  },
-  {
     id: "tasting",
     label: "Degustação",
     description: "Degustação gratuita dos chopps selecionados",

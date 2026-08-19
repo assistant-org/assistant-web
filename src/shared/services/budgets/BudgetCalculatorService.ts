@@ -90,23 +90,30 @@ export class BudgetCalculatorService {
     );
 
     const extraCtx = buildExtraCalcContext(input, billingLiters);
+
+    const hasCustomMugs = selectedExtras.some((e) => e.id === "custom_mugs");
+    const cups = Math.ceil(billingLiters / 0.3);
+
     const extraLines: BudgetExtraLine[] = selectedExtras.map((def) => {
       const amount = roundMoney(def.calc(extraCtx));
       let label = def.label;
       if (def.id === "custom_mugs") {
         label = `${def.label} (${extraCtx.people} × R$ 3,00)`;
-      } else if (def.id === "disposable_cups") {
-        const cups = Math.ceil(billingLiters / 0.3);
-        label = `Copos descartáveis de 300 ml (até ${cups} unidades para ${extraCtx.people} pessoas)`;
       } else if (def.id === "tasting") {
         label = "Degustação gratuita dos chopps selecionados";
       }
-      return {
-        extraId: def.id,
-        label,
-        amount,
-      };
+      return { extraId: def.id, label, amount };
     });
+
+    // Copos descartáveis: incluídos automaticamente quando não há canecas personalizadas
+    if (!hasCustomMugs) {
+      const cupsAmount = roundMoney(cups * 0.3);
+      extraLines.push({
+        extraId: "disposable_cups",
+        label: `Copos descartáveis de 300 ml (até ${cups} unidades para ${extraCtx.people} pessoas)`,
+        amount: cupsAmount,
+      });
+    }
     const extrasSubtotal = roundMoney(
       extraLines.reduce((sum, line) => sum + line.amount, 0),
     );
