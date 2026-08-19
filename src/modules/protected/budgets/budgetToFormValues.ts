@@ -23,6 +23,7 @@ export function budgetToFormValues(budget: Budget): BudgetFormValues {
     clientPhone: budget.clientPhone,
     clientCity: budget.clientCity,
     eventDate: budget.eventDate || "",
+    eventLocation: budget.eventLocation || "",
     notes: budget.notes || "",
     negotiatedTotal: budget.calculation?.wasAdjusted
       ? budget.finalTotal

@@ -38,6 +38,7 @@ function mapBudgetRow(data: Record<string, unknown>): Budget {
     clientCity: (data.client_city as string) || "",
     notes: (data.notes as string) || "",
     eventDate: eventDateRaw ? String(eventDateRaw).slice(0, 10) : null,
+    eventLocation: (data.event_location as string) || undefined,
     status: (data.status as BudgetStatus) || "open",
     reminderSentAt: (data.reminder_sent_at as string) || null,
     created_at: data.created_at as string | undefined,
@@ -64,6 +65,7 @@ function toRowPayload(payload: CreateBudgetRequest | UpdateBudgetRequest) {
     client_city: payload.clientCity,
     notes: payload.notes ?? "",
     event_date: payload.eventDate,
+    event_location: payload.eventLocation ?? null,
     status: payload.status ?? "open",
     updated_at: new Date().toISOString(),
   };

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import ConcludeModal, { ConcludeModalValues } from "./components/ConcludeModal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "../../../shared/context/ToastContext";
@@ -26,6 +27,7 @@ export default function BudgetsContainer() {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Budget | null>(null);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+  const [concludingBudget, setConcludingBudget] = useState<Budget | null>(null);
 
   const formMethods = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
@@ -114,6 +116,7 @@ export default function BudgetsContainer() {
       clientCity: data.clientCity,
       notes: data.notes || "",
       eventDate: data.eventDate,
+      eventLocation: data.eventLocation || undefined,
       status: (editingBudget?.status ?? "open") as "open" | "concluded",
     };
   };
@@ -161,12 +164,16 @@ export default function BudgetsContainer() {
     setMode("done");
   };
 
-  const handleConclude = async (budget: Budget) => {
+  const handleConclude = (budget: Budget) => {
     if (budget.status === "concluded") return;
-    const confirmed = window.confirm(
-      `Concluir orçamento de ${budget.clientName}?`,
-    );
-    if (!confirmed) return;
+    setConcludingBudget(budget);
+  };
+
+  const handleConcludeConfirm = async (values: ConcludeModalValues) => {
+    if (!concludingBudget) return;
+    const budget = concludingBudget;
+    setConcludingBudget(null);
+
     const result = await budgetsService.updateStatus(budget.id, "concluded");
     if (result.error || !result.data) {
       toastError(result.error || "Erro ao concluir");
@@ -176,6 +183,16 @@ export default function BudgetsContainer() {
       prev.map((b) => (b.id === budget.id ? result.data! : b)),
     );
     success("Orçamento concluído");
+
+    try {
+      const { downloadBudgetContractPdf } = await import(
+        "../../../shared/services/budgets/contract/budgetContractPdf"
+      );
+      await downloadBudgetContractPdf({ budget, concludeValues: values });
+    } catch (err) {
+      console.error("Erro ao gerar contrato:", err);
+      toastError("Orçamento concluído, mas falha ao gerar contrato.");
+    }
   };
 
   const handleDelete = async (budget: Budget) => {
@@ -193,30 +210,39 @@ export default function BudgetsContainer() {
   };
 
   return (
-    <BudgetsPresentation
-      mode={mode}
-      budgets={budgets}
-      products={products}
-      formMethods={formMethods}
-      calculation={calculation}
-      lastSaved={lastSaved}
-      isLoading={isLoading}
-      isSaving={isSaving}
-      isEditing={mode === "edit"}
-      wizardKey={
-        mode === "edit" && editingBudget
-          ? `edit-${editingBudget.id}`
-          : mode === "create"
-            ? "create"
-            : "list"
-      }
-      onStartCreate={handleStartCreate}
-      onCancelWizard={handleCancelWizard}
-      onFinalize={handleFinalize}
-      onBackToList={() => setMode("list")}
-      onEdit={handleEdit}
-      onConclude={handleConclude}
-      onDelete={handleDelete}
-    />
+    <>
+      <BudgetsPresentation
+        mode={mode}
+        budgets={budgets}
+        products={products}
+        formMethods={formMethods}
+        calculation={calculation}
+        lastSaved={lastSaved}
+        isLoading={isLoading}
+        isSaving={isSaving}
+        isEditing={mode === "edit"}
+        wizardKey={
+          mode === "edit" && editingBudget
+            ? `edit-${editingBudget.id}`
+            : mode === "create"
+              ? "create"
+              : "list"
+        }
+        onStartCreate={handleStartCreate}
+        onCancelWizard={handleCancelWizard}
+        onFinalize={handleFinalize}
+        onBackToList={() => setMode("list")}
+        onEdit={handleEdit}
+        onConclude={handleConclude}
+        onDelete={handleDelete}
+      />
+      {concludingBudget ? (
+        <ConcludeModal
+          clientName={concludingBudget.clientName}
+          onConfirm={(values) => void handleConcludeConfirm(values)}
+          onCancel={() => setConcludingBudget(null)}
+        />
+      ) : null}
+    </>
   );
 }

@@ -113,6 +113,7 @@ export interface Budget {
   notes: string;
   /** YYYY-MM-DD */
   eventDate: string | null;
+  eventLocation?: string;
   status: BudgetStatus;
   reminderSentAt: string | null;
   created_at?: string;
@@ -137,6 +138,7 @@ export interface CreateBudgetRequest {
   clientCity: string;
   notes?: string;
   eventDate: string;
+  eventLocation?: string;
   status?: BudgetStatus;
 }
 
