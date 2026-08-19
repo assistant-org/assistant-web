@@ -17,6 +17,45 @@ import {
   UpdateBudgetRequest,
 } from "./types";
 
+let eventLocationColumnAvailable: boolean | null = null;
+
+function isMissingEventLocationColumn(error: { code?: string; message?: string }): boolean {
+  return (
+    error.code === "PGRST204" ||
+    error.code === "42703" ||
+    Boolean(error.message?.includes("event_location"))
+  );
+}
+
+async function probeEventLocationColumn(): Promise<boolean> {
+  if (eventLocationColumnAvailable != null) {
+    return eventLocationColumnAvailable;
+  }
+  const { error } = await supabase
+    .from("budgets")
+    .select("event_location")
+    .limit(1);
+  eventLocationColumnAvailable = !error || !isMissingEventLocationColumn(error);
+  return eventLocationColumnAvailable;
+}
+
+function readEventLocation(data: Record<string, unknown>): string | undefined {
+  const fromColumn = data.event_location as string | null | undefined;
+  if (fromColumn?.trim()) return fromColumn.trim();
+  const calculation = data.calculation as BudgetCalculationResult | undefined;
+  const fromCalculation = calculation?.eventLocation?.trim();
+  return fromCalculation || undefined;
+}
+
+function enrichCalculation(
+  calculation: BudgetCalculationResult,
+  eventLocation?: string,
+): BudgetCalculationResult {
+  const trimmed = eventLocation?.trim();
+  if (!trimmed) return calculation;
+  return { ...calculation, eventLocation: trimmed };
+}
+
 function mapBudgetRow(data: Record<string, unknown>): Budget {
   const eventDateRaw = data.event_date as string | null | undefined;
   return {
@@ -38,7 +77,7 @@ function mapBudgetRow(data: Record<string, unknown>): Budget {
     clientCity: (data.client_city as string) || "",
     notes: (data.notes as string) || "",
     eventDate: eventDateRaw ? String(eventDateRaw).slice(0, 10) : null,
-    eventLocation: (data.event_location as string) || undefined,
+    eventLocation: readEventLocation(data),
     status: (data.status as BudgetStatus) || "open",
     reminderSentAt: (data.reminder_sent_at as string) || null,
     created_at: data.created_at as string | undefined,
@@ -46,8 +85,11 @@ function mapBudgetRow(data: Record<string, unknown>): Budget {
   };
 }
 
-function toRowPayload(payload: CreateBudgetRequest | UpdateBudgetRequest) {
-  return {
+function toRowPayload(
+  payload: CreateBudgetRequest | UpdateBudgetRequest,
+  includeEventLocationColumn: boolean,
+) {
+  const row: Record<string, unknown> = {
     service_type: payload.serviceType,
     people: payload.people,
     hours: payload.hours,
@@ -56,7 +98,9 @@ function toRowPayload(payload: CreateBudgetRequest | UpdateBudgetRequest) {
     distance_km: payload.distanceKm,
     flavors: payload.flavors,
     extras: payload.extras,
-    calculation: payload.calculation,
+    calculation: includeEventLocationColumn
+      ? payload.calculation
+      : enrichCalculation(payload.calculation, payload.eventLocation),
     calculated_total: payload.calculatedTotal,
     final_total: payload.finalTotal,
     adjustment_reason: payload.adjustmentReason ?? null,
@@ -65,10 +109,15 @@ function toRowPayload(payload: CreateBudgetRequest | UpdateBudgetRequest) {
     client_city: payload.clientCity,
     notes: payload.notes ?? "",
     event_date: payload.eventDate,
-    event_location: payload.eventLocation ?? null,
     status: payload.status ?? "open",
     updated_at: new Date().toISOString(),
   };
+
+  if (includeEventLocationColumn) {
+    row.event_location = payload.eventLocation ?? null;
+  }
+
+  return row;
 }
 
 export class BudgetsService {
@@ -76,9 +125,10 @@ export class BudgetsService {
 
   async create(payload: CreateBudgetRequest): Promise<ApiResponse<Budget>> {
     try {
+      const includeEventLocationColumn = await probeEventLocationColumn();
       const { data, error } = await supabase
         .from(this.tableName)
-        .insert([toRowPayload(payload)])
+        .insert([toRowPayload(payload, includeEventLocationColumn)])
         .select()
         .single();
 
@@ -97,9 +147,10 @@ export class BudgetsService {
     payload: UpdateBudgetRequest,
   ): Promise<ApiResponse<Budget>> {
     try {
+      const includeEventLocationColumn = await probeEventLocationColumn();
       const { data, error } = await supabase
         .from(this.tableName)
-        .update(toRowPayload(payload))
+        .update(toRowPayload(payload, includeEventLocationColumn))
         .eq("id", id)
         .select()
         .single();

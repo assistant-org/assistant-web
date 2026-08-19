@@ -82,6 +82,8 @@ export interface BudgetCalculationResult {
   /** Manual total liters when set; otherwise null. */
   correctedLiters: number | null;
   wasLitersAdjusted: boolean;
+  /** Persisted in calculation JSONB when event_location column is unavailable. */
+  eventLocation?: string;
 }
 
 export interface BudgetClientInfo {
