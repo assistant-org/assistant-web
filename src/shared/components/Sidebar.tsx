@@ -4,6 +4,7 @@ import { useSession } from "../hooks/useSession";
 import { isFeatureEnabled } from "../config/features";
 import { getTheme, toggleTheme, AppTheme } from "../utils/theme";
 import Button from "./Button";
+import OverlayBackdrop from "./OverlayBackdrop";
 
 const iconStyles =
   "h-6 w-6 mr-4 text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-white transition-colors duration-200";
@@ -209,23 +210,25 @@ const Sidebar = () => {
     <>
       <button
         onClick={toggleSidebar}
-        className="fixed top-4 left-4 z-40 p-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-white border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-[700px]:block hidden hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        className="fixed z-40 p-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-white border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-[700px]:block hidden hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors top-[max(1rem,env(safe-area-inset-top))] left-[max(1rem,env(safe-area-inset-left))]"
         aria-label="Toggle menu"
       >
         {isOpen ? <CloseIcon /> : <MenuIcon />}
       </button>
 
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 max-[700px]:block hidden"
+      {isOpen ? (
+        <OverlayBackdrop
+          className="z-30 max-[700px]:block hidden"
           onClick={closeSidebar}
         />
-      )}
+      ) : null}
 
       <aside
-        className={`fixed top-0 left-0 w-64 h-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white flex flex-col z-20 shadow-lg border-r border-gray-200 dark:border-gray-700 transition-transform duration-300 ease-in-out max-[700px]:${isOpen ? "translate-x-0" : "-translate-x-full"} max-[700px]:z-40`}
+        className={`fixed top-0 left-0 w-64 h-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white flex flex-col z-20 shadow-lg border-r border-gray-200 dark:border-gray-700 transition-transform duration-300 ease-in-out max-[700px]:z-40 ${
+          isOpen ? "max-[700px]:translate-x-0" : "max-[700px]:-translate-x-full"
+        }`}
       >
-        <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 pt-[max(1.25rem,env(safe-area-inset-top))]">
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
             Assistant
           </h2>

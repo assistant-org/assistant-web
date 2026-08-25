@@ -5,12 +5,11 @@ import { BudgetFormValues } from "../../../shared/services/budgets/schema";
 import { Product } from "../../../shared/services/products/types";
 
 export interface IBudgetsPresentationProps {
-  mode: "list" | "create" | "edit" | "done";
+  mode: "list" | "create" | "edit";
   budgets: Budget[];
   products: Product[];
   formMethods: UseFormReturn<BudgetFormValues>;
   calculation: BudgetCalculationResult | null;
-  lastSaved: Budget | null;
   isLoading: boolean;
   isSaving: boolean;
   isEditing: boolean;
@@ -18,8 +17,10 @@ export interface IBudgetsPresentationProps {
   onStartCreate: () => void;
   onCancelWizard: () => void;
   onFinalize: () => void;
-  onBackToList: () => void;
   onEdit: (budget: Budget) => void;
   onConclude: (budget: Budget) => void;
+  onReopen: (budget: Budget) => void;
+  onGenerateContract: (budget: Budget) => void;
+  onDownload: (budget: Budget) => void;
   onDelete: (budget: Budget) => void;
 }

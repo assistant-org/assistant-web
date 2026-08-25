@@ -110,10 +110,13 @@ function buildGroups(
             rows: [{ label: "Distância", value: `${values.distanceKm} km` }],
           };
         case "extras": {
+          const userExtras = values.extras.filter(
+            (e) => e.extraId !== "disposable_cups",
+          );
           const labels =
-            values.extras.length === 0
+            userExtras.length === 0
               ? [{ label: "Extras", value: "Nenhum" }]
-              : values.extras.map((e) => ({
+              : userExtras.map((e) => ({
                   label: "Extra",
                   value: getExtraDefinition(e.extraId)?.label || e.extraId,
                 }));
@@ -126,7 +129,6 @@ function buildGroups(
             rows: [
               { label: "Nome", value: values.clientName || "—" },
               { label: "Telefone", value: values.clientPhone || "—" },
-              { label: "Cidade", value: values.clientCity || "—" },
               {
                 label: "Data do evento",
                 value: formatDateBR(values.eventDate),

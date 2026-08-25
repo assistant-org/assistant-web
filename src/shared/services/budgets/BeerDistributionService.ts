@@ -63,9 +63,9 @@ export class BeerDistributionService {
   }
 
   /**
-   * Snap raw liters to the nearest combination of 20/30/50 kegs.
+   * Snap raw liters to the nearest combination of 30/50 kegs.
    * On equal distance, prefer the larger supply (e.g. 25 → 30).
-   * Positive amounts below 20 snap to one 20L keg.
+   * Positive amounts below 30 snap to one 30L keg.
    */
   snapToKegLiters(raw: number): number {
     if (!Number.isFinite(raw) || raw <= 0) return 0;
@@ -74,31 +74,29 @@ export class BeerDistributionService {
     let bestSupplied: number | null = null;
     let bestDist = Infinity;
 
-    const maxKegs = Math.ceil(need / 20) + 2;
+    const maxKegs = Math.ceil(need / 30) + 2;
 
     for (let c50 = 0; c50 <= maxKegs; c50++) {
       for (let c30 = 0; c30 <= maxKegs - c50; c30++) {
-        for (let c20 = 0; c20 <= maxKegs - c50 - c30; c20++) {
-          if (c50 + c30 + c20 === 0) continue;
-          const supplied = c50 * 50 + c30 * 30 + c20 * 20;
-          const dist = Math.abs(supplied - need);
-          if (
-            dist < bestDist ||
-            (dist === bestDist &&
-              bestSupplied != null &&
-              supplied > bestSupplied)
-          ) {
-            bestDist = dist;
-            bestSupplied = supplied;
-          }
+        if (c50 + c30 === 0) continue;
+        const supplied = c50 * 50 + c30 * 30;
+        const dist = Math.abs(supplied - need);
+        if (
+          dist < bestDist ||
+          (dist === bestDist &&
+            bestSupplied != null &&
+            supplied > bestSupplied)
+        ) {
+          bestDist = dist;
+          bestSupplied = supplied;
         }
       }
     }
 
-    return bestSupplied ?? 20;
+    return bestSupplied ?? 30;
   }
 
-  /** Split billing liters by percent, then snap each flavor to keg sizes. */
+  /** Split need liters by percent, then snap each flavor to 30/50 keg sizes. */
   allocateFlavorLiters(
     billingLiters: number,
     flavors: FlavorPercentInput[],
@@ -117,7 +115,7 @@ export class BeerDistributionService {
   }
 
   /**
-   * Cover required liters with 20/30/50 kegs.
+   * Cover required liters with 30/50 kegs.
    * Never under-supply. Minimize technical reserve; then minimize keg count.
    */
   planKegs(requiredLiters: number): KegPlan {
@@ -131,7 +129,6 @@ export class BeerDistributionService {
       count: number;
       c50: number;
       c30: number;
-      c20: number;
     };
 
     let best: Candidate | null = null;
@@ -139,32 +136,27 @@ export class BeerDistributionService {
 
     for (let c50 = 0; c50 <= max50; c50++) {
       const after50 = need - c50 * 50;
-      const max30 = Math.ceil(Math.max(0, after50) / 30) + 1;
-      for (let c30 = 0; c30 <= max30; c30++) {
-        const covered = c50 * 50 + c30 * 30;
-        const remaining = need - covered;
-        const c20 = remaining <= 0 ? 0 : Math.ceil(remaining / 20);
-        const supplied = covered + c20 * 20;
-        if (supplied < need) continue;
+      const c30 = after50 <= 0 ? 0 : Math.ceil(after50 / 30);
+      const supplied = c50 * 50 + c30 * 30;
+      if (supplied < need) continue;
 
-        const waste = supplied - need;
-        const count = c50 + c30 + c20;
-        if (
-          !best ||
-          waste < best.waste ||
-          (waste === best.waste && count < best.count)
-        ) {
-          best = { waste, count, c50, c30, c20 };
-        }
+      const waste = supplied - need;
+      const count = c50 + c30;
+      if (
+        !best ||
+        waste < best.waste ||
+        (waste === best.waste && count < best.count)
+      ) {
+        best = { waste, count, c50, c30 };
       }
     }
 
     if (!best) {
-      const count = Math.ceil(need / 20);
+      const count = Math.ceil(need / 30);
       return {
-        kegs: [{ size: 20, count }],
-        suppliedLiters: count * 20,
-        technicalReserve: count * 20 - need,
+        kegs: [{ size: 30, count }],
+        suppliedLiters: count * 30,
+        technicalReserve: count * 30 - need,
       };
     }
 
@@ -172,7 +164,6 @@ export class BeerDistributionService {
       [
         { size: 50 as KegSize, count: best.c50 },
         { size: 30 as KegSize, count: best.c30 },
-        { size: 20 as KegSize, count: best.c20 },
       ] as KegLine[]
     ).filter((k) => k.count > 0);
 

@@ -4,6 +4,7 @@ import {
   buildExtraCalcContext,
   getConsumptionProfile,
   getExtraDefinition,
+  getFlavorUnitPrice,
   getServiceTypeConfig,
 } from "./budget.config";
 import { beerDistribution } from "./BeerDistributionService";
@@ -41,9 +42,6 @@ export class BudgetCalculatorService {
         ? input.flavors.map((f) => ({ ...f, percent: 100 }))
         : input.flavors;
 
-    const kegPlanResult = beerDistribution.planKegs(requiredLiters);
-    const suppliedLiters = kegPlanResult.suppliedLiters;
-
     const hasCorrected =
       input.correctedLiters != null &&
       Number.isFinite(input.correctedLiters) &&
@@ -52,20 +50,34 @@ export class BudgetCalculatorService {
       ? roundLiters(input.correctedLiters as number)
       : null;
     const wasLitersAdjusted = Boolean(correctedLiters);
-    const billingLiters = correctedLiters ?? suppliedLiters;
 
+    // Allocate from corrected total or raw need; each flavor snaps to 30/50 kegs.
+    const allocationBase = correctedLiters ?? requiredLiters;
     const allocations = beerDistribution.allocateFlavorLiters(
-      billingLiters,
+      allocationBase,
       flavorsWithPercent,
     );
-    const flavorLines: BudgetFlavorLine[] = allocations.map((a) => ({
-      productId: a.productId,
-      name: a.name,
-      liters: a.liters,
-      unitPrice: a.unitPrice,
-      percent: a.percent,
-      subtotal: roundMoney(a.liters * a.unitPrice),
-    }));
+    const suppliedLiters = roundLiters(
+      allocations.reduce((sum, a) => sum + a.liters, 0),
+    );
+    const kegPlanResult = beerDistribution.planKegs(suppliedLiters);
+    const billingLiters = correctedLiters ?? suppliedLiters;
+
+    const flavorLines: BudgetFlavorLine[] = allocations.map((a) => {
+      const unitPrice = getFlavorUnitPrice(
+        input.serviceType,
+        a.name,
+        a.unitPrice,
+      );
+      return {
+        productId: a.productId,
+        name: a.name,
+        liters: a.liters,
+        unitPrice,
+        percent: a.percent,
+        subtotal: roundMoney(a.liters * unitPrice),
+      };
+    });
 
     const flavorsSubtotal = roundMoney(
       flavorLines.reduce((sum, line) => sum + line.subtotal, 0),
@@ -142,7 +154,7 @@ export class BudgetCalculatorService {
       totalLiters: requiredLiters,
       requiredLiters,
       suppliedLiters,
-      technicalReserve: kegPlanResult.technicalReserve,
+      technicalReserve: roundLiters(suppliedLiters - requiredLiters),
       kegPlan: kegPlanResult.kegs,
       flavorLines,
       flavorsSubtotal,

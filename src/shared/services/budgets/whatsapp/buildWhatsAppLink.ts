@@ -19,7 +19,9 @@ export function buildWhatsAppLink(params: {
   const service = getServiceTypeConfig(params.serviceType);
   const calc = params.calculation;
   const contracted =
-    calc.suppliedLiters ?? calc.requiredLiters ?? calc.totalLiters;
+    calc.flavorLines?.length > 0
+      ? calc.flavorLines.reduce((sum, f) => sum + (f.liters || 0), 0)
+      : (calc.suppliedLiters ?? calc.requiredLiters ?? calc.totalLiters);
 
   const flavorLines =
     calc.flavorLines.length > 0

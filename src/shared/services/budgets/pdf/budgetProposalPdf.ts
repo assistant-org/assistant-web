@@ -27,7 +27,15 @@ export interface BudgetProposalPdfInput {
   issuedAt?: string;
 }
 
-function contractedLiters(calc: BudgetCalculationResult): number {
+function contractedLiters(
+  calc: BudgetCalculationResult,
+  flavors?: BudgetFlavorLine[],
+): number {
+  const lines = flavors?.length ? flavors : calc.flavorLines || [];
+  if (lines.length > 0) {
+    const fromFlavors = lines.reduce((sum, f) => sum + (f.liters || 0), 0);
+    if (fromFlavors > 0) return fromFlavors;
+  }
   if (calc.wasLitersAdjusted && calc.correctedLiters != null) {
     return calc.correctedLiters;
   }
@@ -99,7 +107,7 @@ export function toProposalPdfInput(
   return {
     clientName: f.clientName,
     clientPhone: f.clientPhone,
-    clientCity: f.clientCity,
+    clientCity: "",
     notes: f.notes || "",
     serviceType: f.serviceType,
     calculation: f.calculation,
@@ -126,7 +134,7 @@ function resolveDocProps(input: BudgetProposalPdfInput) {
     serviceType: input.serviceType as BudgetServiceType,
     people,
     hours,
-    contractedLiters: contractedLiters(calc),
+    contractedLiters: contractedLiters(calc, flavors),
     flavors,
     extras,
     total: calc.finalTotal,
@@ -221,7 +229,7 @@ export function buildProposalSummaryText(input: BudgetProposalPdfInput): string 
   const calc = input.calculation;
   return [
     service.label,
-    formatLiters(contractedLiters(calc)),
+    formatLiters(contractedLiters(calc, input.flavors)),
     `Total: ${calc.finalTotal}`,
   ].join(" · ");
 }

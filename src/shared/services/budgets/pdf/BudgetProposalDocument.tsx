@@ -10,7 +10,7 @@ import {
 export interface BudgetProposalDocumentProps {
   clientName: string;
   issuedAt: string;
-  serviceType: "TOTEM" | "KOMBI";
+  serviceType: "TOTEM" | "KOMBI" | "AUTO_SERVICO";
   people: number;
   hours: number;
   contractedLiters: number;
@@ -21,6 +21,9 @@ export interface BudgetProposalDocumentProps {
 }
 
 const CUSTOM_MUGS_EXTRA_ID = "custom_mugs";
+const DISPOSABLE_CUPS_EXTRA_ID = "disposable_cups";
+const OPERATOR_EXTRA_ID = "operator";
+const TASTING_EXTRA_ID = "tasting";
 
 const A4_WIDTH_PX = 794;
 
@@ -53,9 +56,24 @@ export default function BudgetProposalDocument({
 }: BudgetProposalDocumentProps) {
   const serviceTitle = PROPOSAL_SERVICE_TITLES[serviceType];
   const hasCustomMugs = extras.some((e) => e.extraId === CUSTOM_MUGS_EXTRA_ID);
+  const hasOperator = extras.some((e) => e.extraId === OPERATOR_EXTRA_ID);
+  const hasTasting = extras.some((e) => e.extraId === TASTING_EXTRA_ID);
   const showGift = includeGift && hasCustomMugs;
+  // Kombi always includes on-site staff; Totem/Auto only when Operator extra is selected.
+  const showOnSiteAttendance =
+    serviceType === "KOMBI" || hasOperator;
+  const disposableCups = extras.find((e) => e.extraId === DISPOSABLE_CUPS_EXTRA_ID);
   const clientExtras = extras.filter(
-    (e) => e.amount > 0 && e.extraId !== CUSTOM_MUGS_EXTRA_ID,
+    (e) =>
+      e.amount > 0 &&
+      e.extraId !== CUSTOM_MUGS_EXTRA_ID &&
+      e.extraId !== DISPOSABLE_CUPS_EXTRA_ID &&
+      e.extraId !== TASTING_EXTRA_ID &&
+      // Operator is folded into the main description for Totem/Auto — no separate row.
+      !(
+        e.extraId === OPERATOR_EXTRA_ID &&
+        (serviceType === "TOTEM" || serviceType === "AUTO_SERVICO")
+      ),
   );
 
   return (
@@ -206,10 +224,20 @@ export default function BudgetProposalDocument({
                 Serviço completo para <strong>{people} pessoas</strong> que
                 consomem Chopp
               </li>
-              <li>Atendimento no local com equipe especializada</li>
+              {showOnSiteAttendance ? (
+                <li>Atendimento no local com equipe especializada</li>
+              ) : null}
               <li>
                 <strong>{hours} horas</strong> de serviço
               </li>
+              {disposableCups ? (
+                <li>
+                  <strong>{disposableCups.label}</strong>
+                </li>
+              ) : null}
+              {hasTasting ? (
+                <li>Degustação dos sabores selecionados</li>
+              ) : null}
             </ul>
             {showGift ? (
               <div style={{ marginTop: 10 }}>

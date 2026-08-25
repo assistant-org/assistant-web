@@ -58,7 +58,7 @@ export default function CorrectLitersModal({
               const parsed = Number(raw.replace(",", "."));
               setLiters(Number.isFinite(parsed) ? parsed : NaN);
             }}
-            className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-3 py-2 text-sm tabular-nums"
+            className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm tabular-nums text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
           />
         </label>
 

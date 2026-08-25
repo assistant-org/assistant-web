@@ -108,7 +108,7 @@ function toRowPayload(
     client_phone: payload.clientPhone,
     client_city: payload.clientCity,
     notes: payload.notes ?? "",
-    event_date: payload.eventDate,
+    event_date: payload.eventDate?.trim() ? payload.eventDate.trim() : null,
     status: payload.status ?? "open",
     updated_at: new Date().toISOString(),
   };

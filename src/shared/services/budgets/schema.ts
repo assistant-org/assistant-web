@@ -27,7 +27,7 @@ export const budgetExtraSchema = z.object({
 });
 
 export const budgetFormSchema = z.object({
-  serviceType: z.enum(["TOTEM", "KOMBI"]),
+  serviceType: z.enum(["TOTEM", "KOMBI", "AUTO_SERVICO"]),
   people: z.number().min(PEOPLE_MIN).max(PEOPLE_MAX),
   hours: z
     .number()
@@ -53,10 +53,16 @@ export const budgetFormSchema = z.object({
   extras: z.array(budgetExtraSchema),
   correctedLiters: z.number().positive().nullable().optional(),
   clientName: z.string().min(1, "Nome obrigatório"),
-  clientPhone: z.string().min(8, "Telefone obrigatório"),
-  clientCity: z.string().min(1, "Cidade obrigatória"),
-  eventDate: z.string().min(1, "Data do evento obrigatória"),
-  eventLocation: z.string().optional(),
+  clientPhone: z
+    .string()
+    .refine(
+      (v) => {
+        const d = v.replace(/\D/g, "");
+        return d.length === 0 || (d.length >= 10 && d.length <= 11);
+      },
+      { message: "Telefone inválido" },
+    ),
+  eventDate: z.string(),
   notes: z.string(),
   negotiatedTotal: z.number().min(0).nullable().optional(),
   adjustmentReason: z.string().nullable().optional(),
@@ -76,9 +82,7 @@ export const budgetFormDefaults = (): BudgetFormValues => ({
   correctedLiters: null,
   clientName: "",
   clientPhone: "",
-  clientCity: "",
   eventDate: "",
-  eventLocation: "",
   notes: "",
   negotiatedTotal: null,
   adjustmentReason: null,

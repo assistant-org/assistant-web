@@ -55,7 +55,7 @@ export const DISTANCE_MIN = 0;
 export const DISTANCE_MAX = 200;
 
 /** Available keg sizes (liters), largest first for planning. */
-export const KEG_SIZES = [50, 30, 20] as const;
+export const KEG_SIZES = [50, 30] as const;
 
 export type KegSize = (typeof KEG_SIZES)[number];
 
@@ -100,6 +100,21 @@ export const SERVICE_TYPES: ServiceTypeConfig[] = [
     ],
     operational: { mode: "hourly", amount: 160 },
     distanceRatePerKm: 2.2,
+  },
+  {
+    id: "AUTO_SERVICO",
+    label: "Auto serviço",
+    description:
+      "Chopp, chopeira e materiais para extração; operação feita pelo cliente.",
+    includes: [
+      "chopp",
+      "equipamentos de extração",
+      "copos ou canecas",
+      "montagem básica",
+      "retirada",
+    ],
+    operational: { mode: "fixed", amount: 0 },
+    distanceRatePerKm: 0.9,
   },
 ];
 
@@ -155,6 +170,20 @@ export const BUDGET_EXTRAS: ExtraServiceDefinition[] = [
     },
   },
 ];
+
+export const AUTO_SERVICO_PILSEN_PRICE = 14.5;
+export const AUTO_SERVICO_OTHER_PRICE = 15.9;
+
+export function getFlavorUnitPrice(
+  serviceType: BudgetServiceType,
+  flavorName: string,
+  productDefaultPrice: number,
+): number {
+  if (serviceType !== "AUTO_SERVICO") return productDefaultPrice;
+  return /pilsen/i.test(flavorName)
+    ? AUTO_SERVICO_PILSEN_PRICE
+    : AUTO_SERVICO_OTHER_PRICE;
+}
 
 export function getServiceTypeConfig(
   id: BudgetServiceType,

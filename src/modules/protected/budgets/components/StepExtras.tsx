@@ -25,10 +25,12 @@ export default function StepExtras({
   disabled,
 }: StepExtrasProps) {
   const [open, setOpen] = useState(false);
-  const usedIds = new Set(value.map((e) => e.extraId));
+  // Ignore auto-calculated extras that may have been persisted on the budget.
+  const userValue = value.filter((e) => !AUTO_EXTRAS.has(e.extraId));
+  const usedIds = new Set(userValue.map((e) => e.extraId));
 
   const availableFor = (index: number) => {
-    const currentId = value[index]?.extraId;
+    const currentId = userValue[index]?.extraId;
     return EXTRA_OPTIONS.filter(
       (opt) => opt.id === currentId || !usedIds.has(opt.id),
     );
@@ -37,17 +39,17 @@ export default function StepExtras({
   const addRow = () => {
     const next = EXTRA_OPTIONS.find((opt) => !usedIds.has(opt.id));
     if (!next) return;
-    onChange([...value, { extraId: next.id }]);
+    onChange([...userValue, { extraId: next.id }]);
   };
 
   const updateRow = (index: number, extraId: string) => {
-    const next = [...value];
+    const next = [...userValue];
     next[index] = { extraId };
     onChange(next);
   };
 
   const removeRow = (index: number) => {
-    onChange(value.filter((_, i) => i !== index));
+    onChange(userValue.filter((_, i) => i !== index));
   };
 
   const canAdd = EXTRA_OPTIONS.some((opt) => !usedIds.has(opt.id));
@@ -64,8 +66,8 @@ export default function StepExtras({
             Serviços extras
           </p>
           <p className="text-xs text-gray-500">
-            {value.length
-              ? `${value.length} serviço(s) selecionado(s)`
+            {userValue.length
+              ? `${userValue.length} serviço(s) selecionado(s)`
               : "Opcional — fechado por padrão"}
           </p>
         </div>
@@ -74,10 +76,10 @@ export default function StepExtras({
 
       {open ? (
         <div className="p-4 space-y-3 bg-white dark:bg-gray-800">
-          {value.length === 0 ? (
+          {userValue.length === 0 ? (
             <p className="text-sm text-gray-500">Nenhum extra adicionado.</p>
           ) : (
-            value.map((row, index) => (
+            userValue.map((row, index) => (
               <div key={`extra-row-${index}`} className="flex gap-2">
                 <select
                   className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white"

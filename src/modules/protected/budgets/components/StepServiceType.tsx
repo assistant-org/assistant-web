@@ -30,7 +30,11 @@ export default function StepServiceType({
             } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <div className="text-3xl mb-2">
-              {service.id === "TOTEM" ? "🍺" : "🚐"}
+              {service.id === "TOTEM"
+                ? "🍺"
+                : service.id === "KOMBI"
+                  ? "🚐"
+                  : "🍻"}
             </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               {service.label}

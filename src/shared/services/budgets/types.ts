@@ -1,4 +1,4 @@
-export type BudgetServiceType = "TOTEM" | "KOMBI";
+export type BudgetServiceType = "TOTEM" | "KOMBI" | "AUTO_SERVICO";
 
 export type ConsumptionProfileId = "CASUAL" | "MODERATE" | "HIGH";
 

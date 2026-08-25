@@ -1,5 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import ConcludeModal, { ConcludeModalValues } from "./components/ConcludeModal";
+import ContractModal, {
+  ContractModalValues,
+} from "./components/ContractModal";
+import BudgetDownloadModal, {
+  openWhatsApp,
+} from "./components/BudgetDownloadModal";
+import BudgetGeneratedModal from "./components/BudgetGeneratedModal";
+import ClientPhoneModal from "./components/ClientPhoneModal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "../../../shared/context/ToastContext";
@@ -10,13 +17,46 @@ import {
   budgetFormSchema,
   BudgetFormValues,
 } from "../../../shared/services/budgets/schema";
-import { Budget } from "../../../shared/services/budgets/types";
+import {
+  Budget,
+  UpdateBudgetRequest,
+} from "../../../shared/services/budgets/types";
 import { productsService } from "../../../shared/services/products/products.service";
 import { Product } from "../../../shared/services/products/types";
 import { budgetToFormValues } from "./budgetToFormValues";
 import BudgetsPresentation from "./presentation";
 
-type Mode = "list" | "create" | "edit" | "done";
+type Mode = "list" | "create" | "edit";
+
+function budgetToUpdatePayload(
+  budget: Budget,
+  patch: Partial<Pick<Budget, "clientPhone" | "eventDate">>,
+): UpdateBudgetRequest {
+  return {
+    serviceType: budget.serviceType,
+    people: budget.people,
+    hours: budget.hours,
+    consumptionProfile: budget.consumptionProfile,
+    otherDrinks: budget.otherDrinks,
+    distanceKm: budget.distanceKm,
+    flavors: budget.flavors?.length
+      ? budget.flavors
+      : budget.calculation.flavorLines,
+    extras: budget.extras?.length
+      ? budget.extras
+      : budget.calculation.extraLines,
+    calculation: budget.calculation,
+    calculatedTotal: budget.calculatedTotal,
+    finalTotal: budget.finalTotal,
+    adjustmentReason: budget.adjustmentReason,
+    clientName: budget.clientName,
+    clientPhone: patch.clientPhone ?? budget.clientPhone,
+    clientCity: budget.clientCity,
+    notes: budget.notes,
+    eventDate: patch.eventDate ?? budget.eventDate ?? "",
+    status: budget.status,
+  };
+}
 
 export default function BudgetsContainer() {
   const { success, error: toastError } = useToast();
@@ -25,9 +65,12 @@ export default function BudgetsContainer() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Budget | null>(null);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
-  const [concludingBudget, setConcludingBudget] = useState<Budget | null>(null);
+  const [generatedBudget, setGeneratedBudget] = useState<Budget | null>(null);
+  const [downloadBudget, setDownloadBudget] = useState<Budget | null>(null);
+  const [contractBudget, setContractBudget] = useState<Budget | null>(null);
+  const [phoneModalBudget, setPhoneModalBudget] = useState<Budget | null>(null);
+  const [isSavingPhone, setIsSavingPhone] = useState(false);
 
   const formMethods = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
@@ -77,10 +120,44 @@ export default function BudgetsContainer() {
     void loadList();
   }, [loadList]);
 
+  const replaceBudget = (updated: Budget) => {
+    setBudgets((prev) =>
+      prev.map((b) => (b.id === updated.id ? updated : b)),
+    );
+    setGeneratedBudget((prev) =>
+      prev?.id === updated.id ? updated : prev,
+    );
+  };
+
+  const handleNeedPhone = (budget: Budget) => {
+    setDownloadBudget(null);
+    setGeneratedBudget(null);
+    setPhoneModalBudget(budget);
+  };
+
+  const handlePhoneConfirm = async (phone: string) => {
+    if (!phoneModalBudget) return;
+    setIsSavingPhone(true);
+    const result = await budgetsService.update(
+      phoneModalBudget.id,
+      budgetToUpdatePayload(phoneModalBudget, { clientPhone: phone }),
+    );
+    setIsSavingPhone(false);
+
+    if (result.error || !result.data) {
+      toastError(result.error || "Erro ao salvar telefone");
+      return;
+    }
+
+    replaceBudget(result.data);
+    setPhoneModalBudget(null);
+    openWhatsApp(result.data);
+    success("Telefone salvo");
+  };
+
   const handleStartCreate = () => {
     formMethods.reset(budgetFormDefaults());
     setEditingBudget(null);
-    setLastSaved(null);
     setMode("create");
   };
 
@@ -92,7 +169,6 @@ export default function BudgetsContainer() {
   const handleEdit = (budget: Budget) => {
     formMethods.reset(budgetToFormValues(budget));
     setEditingBudget(budget);
-    setLastSaved(null);
     setMode("edit");
   };
 
@@ -113,10 +189,9 @@ export default function BudgetsContainer() {
       adjustmentReason: calculation.adjustmentReason,
       clientName: data.clientName,
       clientPhone: data.clientPhone,
-      clientCity: data.clientCity,
+      clientCity: "",
       notes: data.notes || "",
-      eventDate: data.eventDate,
-      eventLocation: data.eventLocation || undefined,
+      eventDate: data.eventDate || "",
       status: (editingBudget?.status ?? "open") as "open" | "concluded",
     };
   };
@@ -124,7 +199,15 @@ export default function BudgetsContainer() {
   const handleFinalize = async () => {
     const valid = await formMethods.trigger();
     if (!valid) {
-      toastError("Preencha os campos obrigatórios (cliente, data e sabores).");
+      toastError("Preencha os campos obrigatórios.");
+      return;
+    }
+    if (mode === "edit" && !formMethods.getValues("eventDate")?.trim()) {
+      formMethods.setError("eventDate", {
+        type: "required",
+        message: "Data do evento obrigatória",
+      });
+      toastError("Informe a data do evento.");
       return;
     }
     if (!calculation) {
@@ -158,21 +241,18 @@ export default function BudgetsContainer() {
       return;
     }
 
-    setLastSaved(result.data);
     setBudgets((prev) => [result.data!, ...prev]);
     success("Orçamento salvo");
-    setMode("done");
+    setMode("list");
+    setGeneratedBudget(result.data);
   };
 
-  const handleConclude = (budget: Budget) => {
+  const handleConclude = async (budget: Budget) => {
     if (budget.status === "concluded") return;
-    setConcludingBudget(budget);
-  };
-
-  const handleConcludeConfirm = async (values: ConcludeModalValues) => {
-    if (!concludingBudget) return;
-    const budget = concludingBudget;
-    setConcludingBudget(null);
+    const confirmed = window.confirm(
+      `Marcar orçamento de ${budget.clientName} como concluído?`,
+    );
+    if (!confirmed) return;
 
     const result = await budgetsService.updateStatus(budget.id, "concluded");
     if (result.error || !result.data) {
@@ -183,15 +263,56 @@ export default function BudgetsContainer() {
       prev.map((b) => (b.id === budget.id ? result.data! : b)),
     );
     success("Orçamento concluído");
+  };
+
+  const handleReopen = async (budget: Budget) => {
+    if (budget.status !== "concluded") return;
+    const confirmed = window.confirm(
+      `Marcar orçamento de ${budget.clientName} como não concluído?`,
+    );
+    if (!confirmed) return;
+
+    const result = await budgetsService.updateStatus(budget.id, "open");
+    if (result.error || !result.data) {
+      toastError(result.error || "Erro ao reabrir orçamento");
+      return;
+    }
+    setBudgets((prev) =>
+      prev.map((b) => (b.id === budget.id ? result.data! : b)),
+    );
+    success("Orçamento reaberto");
+  };
+
+  const handleContractConfirm = async (values: ContractModalValues) => {
+    if (!contractBudget) return;
+    const budget = contractBudget;
+    setContractBudget(null);
 
     try {
+      if (values.eventDate && values.eventDate !== (budget.eventDate || "")) {
+        const updated = await budgetsService.update(
+          budget.id,
+          budgetToUpdatePayload(budget, { eventDate: values.eventDate }),
+        );
+        if (updated.data) {
+          replaceBudget(updated.data);
+        }
+      }
+
       const { downloadBudgetContractPdf } = await import(
         "../../../shared/services/budgets/contract/budgetContractPdf"
       );
-      await downloadBudgetContractPdf({ budget, concludeValues: values });
+      await downloadBudgetContractPdf({
+        budget: {
+          ...budget,
+          eventDate: values.eventDate || budget.eventDate,
+        },
+        contractValues: values,
+      });
+      success("Contrato gerado");
     } catch (err) {
       console.error("Erro ao gerar contrato:", err);
-      toastError("Orçamento concluído, mas falha ao gerar contrato.");
+      toastError("Falha ao gerar contrato.");
     }
   };
 
@@ -217,7 +338,6 @@ export default function BudgetsContainer() {
         products={products}
         formMethods={formMethods}
         calculation={calculation}
-        lastSaved={lastSaved}
         isLoading={isLoading}
         isSaving={isSaving}
         isEditing={mode === "edit"}
@@ -231,16 +351,42 @@ export default function BudgetsContainer() {
         onStartCreate={handleStartCreate}
         onCancelWizard={handleCancelWizard}
         onFinalize={handleFinalize}
-        onBackToList={() => setMode("list")}
         onEdit={handleEdit}
-        onConclude={handleConclude}
+        onConclude={(b) => void handleConclude(b)}
+        onReopen={(b) => void handleReopen(b)}
+        onGenerateContract={setContractBudget}
+        onDownload={setDownloadBudget}
         onDelete={handleDelete}
       />
-      {concludingBudget ? (
-        <ConcludeModal
-          clientName={concludingBudget.clientName}
-          onConfirm={(values) => void handleConcludeConfirm(values)}
-          onCancel={() => setConcludingBudget(null)}
+      {generatedBudget ? (
+        <BudgetGeneratedModal
+          budget={generatedBudget}
+          onClose={() => setGeneratedBudget(null)}
+          onNeedPhone={handleNeedPhone}
+        />
+      ) : null}
+      {downloadBudget ? (
+        <BudgetDownloadModal
+          budget={downloadBudget}
+          onClose={() => setDownloadBudget(null)}
+          onNeedPhone={handleNeedPhone}
+        />
+      ) : null}
+      {contractBudget ? (
+        <ContractModal
+          clientName={contractBudget.clientName}
+          initialEventDate={contractBudget.eventDate}
+          onConfirm={(values) => void handleContractConfirm(values)}
+          onCancel={() => setContractBudget(null)}
+        />
+      ) : null}
+      {phoneModalBudget ? (
+        <ClientPhoneModal
+          clientName={phoneModalBudget.clientName}
+          initialPhone={phoneModalBudget.clientPhone}
+          isSaving={isSavingPhone}
+          onConfirm={(phone) => void handlePhoneConfirm(phone)}
+          onCancel={() => setPhoneModalBudget(null)}
         />
       ) : null}
     </>

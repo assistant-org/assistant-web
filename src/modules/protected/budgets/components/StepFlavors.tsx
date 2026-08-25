@@ -1,12 +1,17 @@
 import React from "react";
-import { Product } from "../../../../shared/services/products/types";
-import { MAX_FLAVORS } from "../../../../shared/services/budgets/budget.config";
+import {
+  getFlavorUnitPrice,
+  MAX_FLAVORS,
+} from "../../../../shared/services/budgets/budget.config";
 import { beerDistribution } from "../../../../shared/services/budgets/BeerDistributionService";
 import { formatCurrency } from "../../../../shared/services/budgets/format";
 import { BudgetFormValues } from "../../../../shared/services/budgets/schema";
+import { BudgetServiceType } from "../../../../shared/services/budgets/types";
+import { Product } from "../../../../shared/services/products/types";
 
 interface StepFlavorsProps {
   products: Product[];
+  serviceType: BudgetServiceType;
   value: BudgetFormValues["flavors"];
   onChange: (flavors: BudgetFormValues["flavors"]) => void;
   disabled?: boolean;
@@ -22,6 +27,7 @@ function withEqualPercents(
 
 export default function StepFlavors({
   products,
+  serviceType,
   value,
   onChange,
   disabled,
@@ -31,15 +37,21 @@ export default function StepFlavors({
   const atLimit = value.length >= MAX_FLAVORS;
 
   const toggle = (product: Product) => {
+    const unitPrice = getFlavorUnitPrice(
+      serviceType,
+      product.name,
+      product.defaultUnitValue,
+    );
+
     if (selectedIds.has(product.id)) {
       onChange(
         withEqualPercents(
           value
             .filter((f) => f.productId !== product.id)
-            .map(({ productId, name, unitPrice }) => ({
+            .map(({ productId, name, unitPrice: price }) => ({
               productId,
               name,
-              unitPrice,
+              unitPrice: price,
             })),
         ),
       );
@@ -49,15 +61,15 @@ export default function StepFlavors({
 
     onChange(
       withEqualPercents([
-        ...value.map(({ productId, name, unitPrice }) => ({
+        ...value.map(({ productId, name, unitPrice: price }) => ({
           productId,
           name,
-          unitPrice,
+          unitPrice: price,
         })),
         {
           productId: product.id,
           name: product.name,
-          unitPrice: product.defaultUnitValue,
+          unitPrice,
         },
       ]),
     );
@@ -82,6 +94,11 @@ export default function StepFlavors({
         {products.map((product) => {
           const selected = selectedIds.has(product.id);
           const blocked = atLimit && !selected;
+          const displayPrice = getFlavorUnitPrice(
+            serviceType,
+            product.name,
+            product.defaultUnitValue,
+          );
           return (
             <button
               key={product.id}
@@ -102,7 +119,7 @@ export default function StepFlavors({
                   {product.name}
                 </span>
                 <span className="text-xs text-gray-500 whitespace-nowrap">
-                  {formatCurrency(product.defaultUnitValue)}/L
+                  {formatCurrency(displayPrice)}/L
                 </span>
               </div>
             </button>

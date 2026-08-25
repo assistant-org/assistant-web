@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import OverlayBackdrop from "./OverlayBackdrop";
 
 interface BottomSheetProps {
   isOpen: boolean;
@@ -29,15 +30,9 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
 
   return (
     <>
-      {/* Overlay */}
-      <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300"
-        onClick={onClose}
-      />
+      <OverlayBackdrop className="z-40" onClick={onClose} />
 
-      {/* Bottom Sheet */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-2xl shadow-2xl z-50 transform transition-transform duration-300 ease-out max-h-[85vh] flex flex-col">
-        {/* Header */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-2xl shadow-2xl z-50 transform transition-transform duration-300 ease-out max-h-[85vh] flex flex-col pb-[env(safe-area-inset-bottom)]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             {title}
@@ -64,7 +59,6 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
           </button>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-4">{children}</div>
       </div>
     </>

@@ -43,26 +43,23 @@ const FLAVOR_DISTRIBUTION_STEP: BudgetStepDefinition = {
   fields: ["flavors"],
 };
 
-const BASE_AFTER_FLAVORS: BudgetStepDefinition[] = [
-  { key: "distance", title: "Distância", fields: ["distanceKm"] },
-  { key: "extras", title: "Extras", fields: ["extras"] },
-  { key: "review", title: "Revisão do orçamento", fields: [] },
-  {
-    key: "client",
-    title: "Cliente",
-    fields: ["clientName", "clientPhone", "clientCity", "eventDate", "notes"],
-  },
-  { key: "orderReview", title: "Revisão do pedido", fields: [] },
-];
-
 /** Dynamic steps: flavor distribution only when 2+ flavors selected. */
 export function getBudgetSteps(
   flavors: BudgetFormValues["flavors"],
+  options?: { isEditing?: boolean },
 ): BudgetStepDefinition[] {
   const needsDistribution = (flavors?.length ?? 0) > 1;
+  const clientFields: (keyof BudgetFormValues)[] = options?.isEditing
+    ? ["clientName", "clientPhone", "eventDate", "notes"]
+    : ["clientName", "clientPhone", "notes"];
+
   return [
     ...BASE_BEFORE_FLAVORS,
     ...(needsDistribution ? [FLAVOR_DISTRIBUTION_STEP] : []),
-    ...BASE_AFTER_FLAVORS,
+    { key: "distance", title: "Distância", fields: ["distanceKm"] },
+    { key: "extras", title: "Extras", fields: ["extras"] },
+    { key: "review", title: "Revisão do orçamento", fields: [] },
+    { key: "client", title: "Cliente", fields: clientFields },
+    { key: "orderReview", title: "Revisão do pedido", fields: [] },
   ];
 }

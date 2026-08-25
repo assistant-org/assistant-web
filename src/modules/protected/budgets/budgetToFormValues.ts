@@ -1,6 +1,9 @@
 import { Budget } from "../../../shared/services/budgets/types";
 import { BudgetFormValues } from "../../../shared/services/budgets/schema";
 
+/** Auto-added in calculation — never user-selected in the form. */
+const AUTO_EXTRA_IDS = new Set(["disposable_cups"]);
+
 export function budgetToFormValues(budget: Budget): BudgetFormValues {
   return {
     serviceType: budget.serviceType,
@@ -15,15 +18,15 @@ export function budgetToFormValues(budget: Budget): BudgetFormValues {
       unitPrice: f.unitPrice,
       percent: f.percent ?? 0,
     })),
-    extras: (budget.extras || []).map((e) => ({ extraId: e.extraId })),
+    extras: (budget.extras || [])
+      .filter((e) => !AUTO_EXTRA_IDS.has(e.extraId))
+      .map((e) => ({ extraId: e.extraId })),
     correctedLiters: budget.calculation?.wasLitersAdjusted
       ? budget.calculation.correctedLiters
       : null,
     clientName: budget.clientName,
     clientPhone: budget.clientPhone,
-    clientCity: budget.clientCity,
     eventDate: budget.eventDate || "",
-    eventLocation: budget.eventLocation || "",
     notes: budget.notes || "",
     negotiatedTotal: budget.calculation?.wasAdjusted
       ? budget.finalTotal

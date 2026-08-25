@@ -4,6 +4,7 @@ import { UseFormReturn } from "react-hook-form";
 import Button from "../../../../shared/components/Button";
 import DiscardConfirmDialog from "../../../../shared/components/DiscardConfirmDialog";
 import { useMediaQuery } from "../../../../shared/hooks/useMediaQuery";
+import { getFlavorUnitPrice } from "../../../../shared/services/budgets/budget.config";
 import { beerDistribution } from "../../../../shared/services/budgets/BeerDistributionService";
 import { BudgetFormValues } from "../../../../shared/services/budgets/schema";
 import {
@@ -52,12 +53,12 @@ export default function BudgetWizard({
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const isMobileShell = useMediaQuery("(max-width: 1023px)");
 
-  const { watch, setValue, trigger, formState } = formMethods;
+  const { watch, setValue, trigger, setError, formState } = formMethods;
   const values = watch();
 
   const steps = useMemo(
-    () => getBudgetSteps(values.flavors || []),
-    [values.flavors],
+    () => getBudgetSteps(values.flavors || [], { isEditing }),
+    [values.flavors, isEditing],
   );
 
   // Open on order review (last step) when editing
@@ -73,6 +74,31 @@ export default function BudgetWizard({
       setStepIndex(Math.max(0, steps.length - 1));
     }
   }, [steps.length, stepIndex]);
+
+  useEffect(() => {
+    const flavors = values.flavors || [];
+    if (!flavors.length) return;
+
+    const remapped = flavors.map((f) => {
+      const product = products.find((p) => p.id === f.productId);
+      const base = product?.defaultUnitValue ?? f.unitPrice;
+      return {
+        ...f,
+        unitPrice: getFlavorUnitPrice(
+          values.serviceType as BudgetServiceType,
+          f.name,
+          base,
+        ),
+      };
+    });
+
+    const changed = remapped.some(
+      (f, i) => f.unitPrice !== flavors[i]?.unitPrice,
+    );
+    if (changed) {
+      setValue("flavors", remapped, { shouldDirty: true });
+    }
+  }, [values.serviceType, products, setValue, values.flavors]);
 
   const step = steps[Math.min(stepIndex, steps.length - 1)];
   const isFirst = stepIndex === 0;
@@ -167,6 +193,13 @@ export default function BudgetWizard({
       }
       return;
     }
+    if (step.key === "client" && isEditing && !values.eventDate?.trim()) {
+      setError("eventDate", {
+        type: "required",
+        message: "Data do evento obrigatória",
+      });
+      return;
+    }
     if (isLast) {
       onFinalize();
       return;
@@ -257,6 +290,7 @@ export default function BudgetWizard({
         return (
           <StepFlavors
             products={products}
+            serviceType={values.serviceType as BudgetServiceType}
             value={values.flavors}
             onChange={(v) => setValue("flavors", v, { shouldValidate: true })}
             disabled={isLoading}
@@ -295,7 +329,13 @@ export default function BudgetWizard({
           />
         );
       case "client":
-        return <StepClient formMethods={formMethods} disabled={isLoading} />;
+        return (
+          <StepClient
+            formMethods={formMethods}
+            showEventDate={isEditing}
+            disabled={isLoading}
+          />
+        );
       case "review":
         return (
           <div className="space-y-3">
@@ -325,8 +365,6 @@ export default function BudgetWizard({
     await handleNext();
   };
 
-  // When editing a section (not on order review), "Revisar" returns to order review
-  const showReviewReturn = isEditing && !isOrderReview;
   const primaryLabel = isCalcReview
     ? "Continuar para cliente"
     : step?.key === "client"
@@ -339,14 +377,10 @@ export default function BudgetWizard({
       <Button
         type="button"
         variant="secondary"
-        onClick={
-          showReviewReturn
-            ? () => goToStep("orderReview")
-            : handleBack
-        }
-        disabled={(!showReviewReturn && isFirst) || isLoading}
+        onClick={handleBack}
+        disabled={isFirst || isLoading}
       >
-        {showReviewReturn ? "Revisar" : "Voltar"}
+        Voltar
       </Button>
       <Button
         type="button"
